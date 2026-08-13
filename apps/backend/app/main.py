@@ -206,9 +206,24 @@ def taxonomy() -> dict[str, Any]:
 @app.get("/sources")
 def sources() -> list[dict[str, Any]]:
     connection = database()
+    configured = load_json(SOURCES_PATH).get("sources", [])
     rows = connection.execute("SELECT * FROM source_health ORDER BY source_name").fetchall()
     connection.close()
-    return [dict(row) for row in rows]
+    by_id = {row["source_id"]: dict(row) for row in rows}
+    return [
+        by_id.get(
+            source["id"],
+            {
+                "source_id": source["id"],
+                "source_name": source["name"],
+                "status": "pending",
+                "item_count": 0,
+                "detail": "尚未刷新",
+                "last_checked_at": None,
+            },
+        )
+        for source in configured
+    ]
 
 
 @app.get("/news")
@@ -219,8 +234,10 @@ def news(
     limit: int = Query(default=50, ge=1, le=100),
 ) -> dict[str, Any]:
     connection = database()
-    clauses = []
-    params: list[Any] = []
+    configured_sources = load_json(SOURCES_PATH).get("sources", [])
+    source_ids = [source["id"] for source in configured_sources]
+    clauses = [f"source_id IN ({','.join('?' for _ in source_ids)})"] if source_ids else ["1 = 0"]
+    params: list[Any] = list(source_ids)
     if primary_sector:
         clauses.append("primary_sector = ?")
         params.append(primary_sector)
