@@ -12,7 +12,7 @@ function createWindow() {
     },
   })
 
-  window.loadURL('http://localhost:5173/')
+  window.loadURL('http://localhost:5174/')
 }
 
 app.whenReady().then(createWindow)
