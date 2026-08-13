@@ -1,3 +1,5 @@
-const { contextBridge } = require('electron')
+const { contextBridge, ipcRenderer } = require('electron')
 
-contextBridge.exposeInMainWorld('desktopAgent', {})
+contextBridge.exposeInMainWorld('desktopAgent', {
+  getBackendStatus: () => ipcRenderer.invoke('backend:status'),
+})

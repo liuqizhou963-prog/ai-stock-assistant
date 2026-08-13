@@ -1,10 +1,34 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 const sectors = ['全部行业', '农林牧渔', '基础化工', '钢铁', '有色金属', '电子', '家用电器', '食品饮料', '纺织服饰', '轻工制造', '医药生物']
 
 function App() {
   const [activeSector, setActiveSector] = useState('全部行业')
+  const [backendStatus, setBackendStatus] = useState<{
+    online: boolean
+    service?: string
+    status?: string
+    detail?: string
+  } | null>(null)
+
+  useEffect(() => {
+    let active = true
+
+    const checkBackend = async () => {
+      const result = await window.desktopAgent?.getBackendStatus()
+      if (active) {
+        setBackendStatus(result ?? { online: false, detail: '仅浏览器模式，未连接桌面后端' })
+      }
+    }
+
+    void checkBackend()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const backendLabel = backendStatus?.online ? '后端已连接' : '后端未连接'
 
   return (
     <main className="news-app">
@@ -37,6 +61,14 @@ function App() {
           <div><p className="section-kicker">INVESTMENT NEWS</p><h1>{activeSector}</h1><p className="header-meta">覆盖 12 个主题赛道 · 本栏 184 条　<span>最近 7 天</span> · 更新 2026-08-11 05:24:32 · 本地抓取</p></div>
           <div className="header-actions"><button type="button" aria-label="刷新资讯">↻</button><button className="ai-button" type="button">AI</button></div>
         </header>
+
+        <div className={`backend-status ${backendStatus?.online ? 'backend-status-online' : 'backend-status-offline'}`} role="status">
+          <span className="backend-status-dot" aria-hidden="true" />
+          <div>
+            <strong>{backendLabel}</strong>
+            <p>{backendStatus?.online ? `${backendStatus.service ?? 'desktop-agent-backend'} · ${backendStatus.status ?? 'ok'}` : backendStatus?.detail ?? '正在检查本地后端'}</p>
+          </div>
+        </div>
 
         <div className="news-content">
           <section className="highlights" aria-labelledby="highlights-title">
