@@ -190,6 +190,8 @@ def parse_eastmoney(payload: bytes, source: dict[str, Any]) -> list[dict[str, An
 
 
 def fetch_source(source: dict[str, Any]) -> list[dict[str, Any]]:
+    if source.get("format") == "pending":
+        return []
     if source["format"] == "cls":
         params = {"appName": "CailianpressWeb", "os": "web", "sv": "7.7.5", "last_time": "", "refresh_type": "1", "rn": "50"}
         query = urlencode(sorted(params.items()))
@@ -214,10 +216,12 @@ def refresh_sources() -> dict[str, Any]:
     source_results = []
     for source in sources:
         checked_at = now_iso()
-        status = "ok"
-        detail = ""
+        status = "pending" if source.get("format") == "pending" or not source.get("enabled", True) else "ok"
+        detail = "数据源待接入" if status == "pending" else ""
         items: list[dict[str, Any]] = []
         try:
+            if status == "pending":
+                raise LookupError(detail)
             items = fetch_source(source)
             for item in items:
                 cursor = connection.execute(
@@ -227,7 +231,9 @@ def refresh_sources() -> dict[str, Any]:
                     (item["fingerprint"], item["title"], item["summary"], item["url"], item["source_id"], item["source_name"], item["published_at"], item["fetched_at"], item["primary_sector"], item["industry"], json.dumps(item["topics"], ensure_ascii=False)),
                 )
                 inserted += cursor.rowcount
-        except (OSError, URLError, ElementTree.ParseError, TimeoutError) as error:
+        except LookupError:
+            pass
+        except (OSError, URLError, ElementTree.ParseError, TimeoutError, ValueError, json.JSONDecodeError) as error:
             status = "error"
             detail = str(error)[:240]
         connection.execute(
@@ -269,7 +275,7 @@ def sources() -> list[dict[str, Any]]:
                 "source_name": source["name"],
                 "status": "pending",
                 "item_count": 0,
-                "detail": "尚未刷新",
+                "detail": "数据源待接入",
                 "last_checked_at": None,
             },
         )

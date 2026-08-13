@@ -117,6 +117,7 @@ function App() {
 
   const backendOnline = Boolean(taxonomy)
   const failedSources = sources.filter((source) => source.status === 'error')
+  const pendingSources = sources.filter((source) => source.status === 'pending')
 
   return (
     <main className="news-app">
@@ -147,11 +148,12 @@ function App() {
 
         <div className="news-content">
           {failedSources.length > 0 && <div className="source-warning" role="alert">{failedSources.length} 个来源暂时不可用：{failedSources.map((source) => source.source_name).join('、')}。其他来源仍可继续刷新。</div>}
+          {pendingSources.length > 0 && <div className="source-pending" role="status">{pendingSources.length} 个来源显示“数据源待接入”：{pendingSources.map((source) => source.source_name).join('、')}。当前不会展示未经验证的内容。</div>}
           {loading && <div className="empty-state">正在读取本地资讯库…</div>}
           {!loading && news.length === 0 && <div className="empty-state"><strong>暂无匹配资讯</strong><span>点击右上角刷新按钮抓取已配置来源，或调整筛选条件。</span></div>}
           <div className="news-list">{news.map((item) => <article className="news-card" key={item.id}><div className="news-bullet" /><div className="news-card-body"><h2><a href={item.url} target="_blank" rel="noreferrer">{item.title}</a></h2>{item.summary && <p>{item.summary}</p>}<div className="news-tags"><span className="tag">{item.primary_sector}</span>{item.industry && <span className="tag">{item.industry}</span>}{item.topics.map((topic) => <span className="tag" key={topic}>{topic}</span>)}</div></div><div className="news-card-meta"><strong>{item.source_name}</strong><time>{formatDate(item.published_at)}</time></div></article>)}</div>
           {!loading && news.length < total && <button className="load-more-button" type="button" onClick={() => void loadNews(false, offset, true)} disabled={loadingMore}>{loadingMore ? '正在加载...' : `加载更多（已显示 ${news.length} / ${total}）`}</button>}
-          {sources.length > 0 && <section className="source-panel"><h2>来源健康</h2>{sources.map((source) => <div className="source-row" key={source.source_id}><span className={`source-dot source-${source.status}`} /> <strong>{source.source_name}</strong><span>{source.status === 'ok' ? `${source.item_count} 条` : source.detail || '不可用'}</span></div>)}</section>}
+          {sources.length > 0 && <section className="source-panel"><h2>来源健康</h2>{sources.map((source) => <div className="source-row" key={source.source_id}><span className={`source-dot source-${source.status}`} /> <strong>{source.source_name}</strong><span>{source.status === 'ok' ? `${source.item_count} 条` : source.status === 'pending' ? '数据源待接入' : source.detail || '不可用'}</span></div>)}</section>}
         </div>
       </section>
     </main>
