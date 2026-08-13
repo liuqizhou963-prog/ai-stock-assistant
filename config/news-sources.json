@@ -2,17 +2,17 @@
   "version": 1,
   "sources": [
     {
-      "id": "ft-chinese",
-      "name": "FT中文网",
-      "url": "https://www.ftchinese.com/rss/feed",
-      "format": "rss",
+      "id": "cls-telegraph",
+      "name": "财联社快讯",
+      "url": "https://www.cls.cn/v1/roll/get_roll_list",
+      "format": "cls",
       "enabled": true
     },
     {
-      "id": "nytimes-business",
-      "name": "纽约时报商业",
-      "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
-      "format": "rss",
+      "id": "eastmoney-global",
+      "name": "东方财富全球资讯",
+      "url": "https://np-weblist.eastmoney.com/comm/web/getFastNewsList",
+      "format": "eastmoney",
       "enabled": true
     }
   ]

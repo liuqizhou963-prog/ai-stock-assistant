@@ -3,10 +3,12 @@ import html
 import json
 import re
 import sqlite3
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.error import URLError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
@@ -111,6 +113,24 @@ def classify(title: str, summary: str) -> tuple[str, str, list[str]]:
     return primary_sector, industry, topics
 
 
+def news_item(title: str, summary: str, url: str, published: str, source: dict[str, Any]) -> dict[str, Any]:
+    primary_sector, industry, topics = classify(title, summary)
+    fingerprint = hashlib.sha256(f"{title}|{url}".encode("utf-8")).hexdigest()
+    return {
+        "fingerprint": fingerprint,
+        "title": title,
+        "summary": summary[:500],
+        "url": url,
+        "source_id": source["id"],
+        "source_name": source["name"],
+        "published_at": published or None,
+        "fetched_at": now_iso(),
+        "primary_sector": primary_sector,
+        "industry": industry,
+        "topics": topics,
+    }
+
+
 def parse_feed(payload: bytes, source: dict[str, Any]) -> list[dict[str, Any]]:
     root = ElementTree.fromstring(payload)
     items = root.findall(".//item")
@@ -136,22 +156,55 @@ def parse_feed(payload: bytes, source: dict[str, Any]) -> list[dict[str, Any]]:
         published = value("pubDate", "published", "updated")
         if not title or not link:
             continue
-        primary_sector, industry, topics = classify(title, summary)
-        fingerprint = hashlib.sha256(f"{title}|{link}".encode("utf-8")).hexdigest()
-        results.append({
-            "fingerprint": fingerprint,
-            "title": title,
-            "summary": summary[:500],
-            "url": link,
-            "source_id": source["id"],
-            "source_name": source["name"],
-            "published_at": published or None,
-            "fetched_at": now_iso(),
-            "primary_sector": primary_sector,
-            "industry": industry,
-            "topics": topics,
-        })
+        results.append(news_item(title, summary, link, published, source))
     return results
+
+
+def parse_cls(payload: bytes, source: dict[str, Any]) -> list[dict[str, Any]]:
+    data = json.loads(payload.decode("utf-8"))
+    results = []
+    for item in data.get("data", {}).get("roll_data", [])[:100]:
+        title = clean_text(item.get("title") or item.get("brief") or item.get("content"))
+        summary = clean_text(item.get("content") or item.get("brief"))
+        article_id = item.get("id")
+        if not title or not article_id:
+            continue
+        published = ""
+        if item.get("ctime"):
+            published = datetime.fromtimestamp(item["ctime"], timezone.utc).isoformat()
+        results.append(news_item(title, summary, f"https://www.cls.cn/detail/{article_id}", published, source))
+    return results
+
+
+def parse_eastmoney(payload: bytes, source: dict[str, Any]) -> list[dict[str, Any]]:
+    data = json.loads(payload.decode("utf-8"))
+    results = []
+    for item in data.get("data", {}).get("fastNewsList", [])[:100]:
+        title = clean_text(item.get("title"))
+        summary = clean_text(item.get("summary"))
+        if not title:
+            continue
+        code = item.get("code", "")
+        results.append(news_item(title, summary, f"https://kuaixun.eastmoney.com/news/{code}", item.get("showTime", ""), source))
+    return results
+
+
+def fetch_source(source: dict[str, Any]) -> list[dict[str, Any]]:
+    if source["format"] == "cls":
+        params = {"appName": "CailianpressWeb", "os": "web", "sv": "7.7.5", "last_time": "", "refresh_type": "1", "rn": "50"}
+        query = urlencode(sorted(params.items()))
+        sign = hashlib.md5(hashlib.sha1(query.encode("utf-8")).hexdigest().encode("utf-8")).hexdigest()
+        request = Request(f"{source['url']}?{query}&sign={sign}", headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.cls.cn/"})
+        with urlopen(request, timeout=10) as response:
+            return parse_cls(response.read(), source)
+    if source["format"] == "eastmoney":
+        params = {"client": "web", "biz": "web_724", "fastColumn": "102", "sortEnd": "", "pageSize": "100", "req_trace": str(uuid.uuid4())}
+        request = Request(f"{source['url']}?{urlencode(params)}", headers={"User-Agent": "Mozilla/5.0", "Referer": "https://kuaixun.eastmoney.com/"})
+        with urlopen(request, timeout=10) as response:
+            return parse_eastmoney(response.read(), source)
+    request = Request(source["url"], headers={"User-Agent": "DesktopAgent/0.1"})
+    with urlopen(request, timeout=10) as response:
+        return parse_feed(response.read(), source)
 
 
 def refresh_sources() -> dict[str, Any]:
@@ -165,9 +218,7 @@ def refresh_sources() -> dict[str, Any]:
         detail = ""
         items: list[dict[str, Any]] = []
         try:
-            request = Request(source["url"], headers={"User-Agent": "DesktopAgent/0.1"})
-            with urlopen(request, timeout=8) as response:
-                items = parse_feed(response.read(), source)
+            items = fetch_source(source)
             for item in items:
                 cursor = connection.execute(
                     """INSERT OR IGNORE INTO news
