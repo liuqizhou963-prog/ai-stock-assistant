@@ -283,6 +283,7 @@ def news(
     industry: str | None = Query(default=None),
     topic: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
 ) -> dict[str, Any]:
     connection = database()
     configured_sources = load_json(SOURCES_PATH).get("sources", [])
@@ -299,7 +300,11 @@ def news(
         clauses.append("topics LIKE ?")
         params.append(f'%"{topic}"%')
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-    rows = connection.execute(f"SELECT * FROM news {where} ORDER BY COALESCE(published_at, fetched_at) DESC LIMIT ?", (*params, limit)).fetchall()
+    total = connection.execute(f"SELECT COUNT(*) FROM news {where}", params).fetchone()[0]
+    rows = connection.execute(
+        f"SELECT * FROM news {where} ORDER BY COALESCE(published_at, fetched_at) DESC LIMIT ? OFFSET ?",
+        (*params, limit, offset),
+    ).fetchall()
     latest = connection.execute("SELECT MAX(fetched_at) FROM news").fetchone()[0]
     connection.close()
     items = []
@@ -307,7 +312,7 @@ def news(
         item = dict(row)
         item["topics"] = json.loads(item["topics"])
         items.append(item)
-    return {"items": items, "count": len(items), "updatedAt": latest}
+    return {"items": items, "count": len(items), "total": total, "offset": offset, "limit": limit, "updatedAt": latest}
 
 
 @app.post("/refresh")

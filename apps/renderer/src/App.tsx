@@ -22,6 +22,15 @@ type NewsItem = {
   topics: string[]
 }
 
+type NewsResponse = {
+  items: NewsItem[]
+  count: number
+  total: number
+  offset: number
+  limit: number
+  updatedAt: string | null
+}
+
 type SourceHealth = {
   source_id: string
   source_name: string
@@ -45,6 +54,9 @@ function App() {
   const [activeTopic, setActiveTopic] = useState('')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [offset, setOffset] = useState(0)
+  const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
   const [updatedAt, setUpdatedAt] = useState<string | null>(null)
 
@@ -54,22 +66,27 @@ function App() {
     return taxonomy.primarySectors.find((sector) => sector.name === activeSector)?.industries ?? []
   }, [activeSector, taxonomy])
 
-  const loadNews = async (shouldRefresh = false) => {
+  const loadNews = async (shouldRefresh = false, requestOffset = 0, append = false) => {
     setError('')
     if (shouldRefresh) setRefreshing(true)
+    if (append) setLoadingMore(true)
     try {
       if (shouldRefresh) await fetch(`${API_BASE}/refresh`, { method: 'POST' })
       const query = new URLSearchParams()
       if (activeSector !== '全部行业') query.set('primary_sector', activeSector)
       if (activeIndustry) query.set('industry', activeIndustry)
       if (activeTopic) query.set('topic', activeTopic)
+      query.set('limit', '50')
+      query.set('offset', String(requestOffset))
       const [newsResponse, sourceResponse] = await Promise.all([
         fetch(`${API_BASE}/news?${query.toString()}`),
         fetch(`${API_BASE}/sources`),
       ])
       if (!newsResponse.ok || !sourceResponse.ok) throw new Error('新闻服务返回异常')
-      const newsData = await newsResponse.json()
-      setNews(newsData.items)
+      const newsData = (await newsResponse.json()) as NewsResponse
+      setNews((current) => requestOffset === 0 ? newsData.items : [...current, ...newsData.items])
+      setOffset(requestOffset + newsData.items.length)
+      setTotal(newsData.total)
       setUpdatedAt(newsData.updatedAt)
       setSources(await sourceResponse.json())
     } catch (requestError) {
@@ -77,6 +94,7 @@ function App() {
     } finally {
       setLoading(false)
       setRefreshing(false)
+      setLoadingMore(false)
     }
   }
 
@@ -132,6 +150,7 @@ function App() {
           {loading && <div className="empty-state">正在读取本地资讯库…</div>}
           {!loading && news.length === 0 && <div className="empty-state"><strong>暂无匹配资讯</strong><span>点击右上角刷新按钮抓取已配置来源，或调整筛选条件。</span></div>}
           <div className="news-list">{news.map((item) => <article className="news-card" key={item.id}><div className="news-bullet" /><div className="news-card-body"><h2><a href={item.url} target="_blank" rel="noreferrer">{item.title}</a></h2>{item.summary && <p>{item.summary}</p>}<div className="news-tags"><span className="tag">{item.primary_sector}</span>{item.industry && <span className="tag">{item.industry}</span>}{item.topics.map((topic) => <span className="tag" key={topic}>{topic}</span>)}</div></div><div className="news-card-meta"><strong>{item.source_name}</strong><time>{formatDate(item.published_at)}</time></div></article>)}</div>
+          {!loading && news.length < total && <button className="load-more-button" type="button" onClick={() => void loadNews(false, offset, true)} disabled={loadingMore}>{loadingMore ? '正在加载...' : `加载更多（已显示 ${news.length} / ${total}）`}</button>}
           {sources.length > 0 && <section className="source-panel"><h2>来源健康</h2>{sources.map((source) => <div className="source-row" key={source.source_id}><span className={`source-dot source-${source.status}`} /> <strong>{source.source_name}</strong><span>{source.status === 'ok' ? `${source.item_count} 条` : source.detail || '不可用'}</span></div>)}</section>}
         </div>
       </section>
