@@ -1,0 +1,13 @@
+{
+  "name": "desktop-agent-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "桌面 Agent Electron shell",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.3.3"
+  }
+}
