@@ -112,10 +112,6 @@ function App() {
           <button className={`sector-item ${activeSector === '全部行业' ? 'sector-item-active' : ''}`} type="button" onClick={() => { setActiveSector('全部行业'); setActiveIndustry('') }}><span>全部行业</span><small>{news.length}</small></button>
           {taxonomy?.primarySectors.map((sector) => <button className={`sector-item ${activeSector === sector.name ? 'sector-item-active' : ''}`} key={sector.id} type="button" onClick={() => { setActiveSector(sector.name); setActiveIndustry('') }}><span>{sector.name}</span><small>{sector.industries.length}</small></button>)}
         </div>
-        <div className="nav-heading">申万一级行业（31）</div>
-        <div className="industry-list">
-          {taxonomy?.industries.map((industry) => <button className={`industry-item ${activeIndustry === industry ? 'industry-item-active' : ''}`} key={industry} type="button" onClick={() => { setActiveSector('全部行业'); setActiveIndustry(industry) }}>{industry}</button>)}
-        </div>
       </aside>
 
       <section className="news-main">
