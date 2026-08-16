@@ -6,3 +6,9 @@ __pycache__/
 .env
 *.log
 state/*.db
+.claude/
+.playwright-cli/
+apps/desktop/release/
+output/
+skills/
+state/

@@ -5,9 +5,24 @@
   "description": "桌面 Agent Electron shell",
   "main": "src/main.cjs",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.desktopagent.stock",
+    "productName": "股票研究助手",
+    "directories": { "output": "release" },
+    "files": ["src/**/*", "package.json"],
+    "extraResources": [
+      { "from": "../renderer/dist", "to": "renderer" },
+      { "from": "../backend/app", "to": "backend/app" },
+      { "from": "../backend/.venv", "to": "backend/.venv" },
+      { "from": "../../config", "to": "config" }
+    ],
+    "win": { "target": "nsis" }
   },
   "devDependencies": {
-    "electron": "^28.3.3"
+    "electron": "^28.3.3",
+    "electron-builder": "^26.15.3"
   }
 }
