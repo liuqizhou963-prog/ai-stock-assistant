@@ -137,11 +137,6 @@ class BacktestReportRequest(BaseModel):
     backtest: BacktestRequest
 
 
-class NewsDeepAnalysisRequest(BaseModel):
-    news_id: int
-    model: ChatProvider = "deepseek"
-
-
 class NewsReadUpdate(BaseModel):
     is_read: bool = True
 
@@ -3141,34 +3136,6 @@ def news(
         "limit": limit,
         "updatedAt": latest,
     }
-
-
-@app.post("/news/deep-analysis")
-def deep_analyze_news(payload: NewsDeepAnalysisRequest) -> dict[str, Any]:
-    connection = database()
-    try:
-        row = connection.execute("SELECT * FROM news WHERE id = ?", (payload.news_id,)).fetchone()
-    finally:
-        connection.close()
-    if not row:
-        raise HTTPException(status_code=404, detail="资讯不存在")
-    item = dict(row)
-    prompt = f"""分析下面这条资讯对相关 A 股公司的影响，只做研究分析，不提供买卖建议。
-
-资讯标题：{item['title']}
-资讯摘要：{item['summary'] or '摘要暂缺'}
-来源：{item['source_name']}
-发布时间：{item['published_at'] or item['fetched_at']}
-
-请严格按以下结构回答：
-1. 核心判断：影响偏正面、偏负面或中性，并说明影响是短期还是长期。
-2. 影响路径：这条资讯如何影响相关公司的收入、成本、估值或预期。
-3. 相关标的与行业：只列出可合理关联的公司或行业，并说明关联逻辑；不确定时明确说明。
-4. 后续验证：列出需要继续跟踪的数据、公告或事件。
-5. 风险提示：列出结论可能失效的因素。
-"""
-    analysis, traces = provider_response(payload.model, [{"role": "user", "content": prompt}], [])
-    return {"status": "success", "newsId": payload.news_id, "analysis": analysis, "generatedAt": now_iso(), "toolCalls": traces}
 
 
 @app.post("/news/{news_id}/read")

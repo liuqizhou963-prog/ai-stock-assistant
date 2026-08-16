@@ -102,13 +102,6 @@ type NewsResponse = {
   updatedAt: string | null;
 };
 
-type NewsDeepAnalysis = {
-  status: "loading" | "success" | "error";
-  analysis?: string;
-  error?: string;
-  generatedAt?: string;
-};
-
 type SourceHealth = {
   source_id: string;
   source_name: string;
@@ -231,6 +224,14 @@ type DataManagement = {
 };
 
 type ChartMode = "day" | "intraday";
+type IndicatorKey =
+  | "ma5"
+  | "ma10"
+  | "ma20"
+  | "bollinger"
+  | "macd"
+  | "kdj"
+  | "rsi";
 type WorkbenchSection =
   | "overview"
   | "detail"
@@ -697,6 +698,23 @@ function StockPriceChart({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rows = normalizeChartRows(mode === "intraday" ? intraday : daily);
   const technical = calculateTechnicalSnapshot(rows);
+  const [visibleIndicators, setVisibleIndicators] = useState<
+    Record<IndicatorKey, boolean>
+  >({
+    ma5: true,
+    ma10: true,
+    ma20: true,
+    bollinger: true,
+    macd: true,
+    kdj: true,
+    rsi: true,
+  });
+  const toggleIndicator = (key: IndicatorKey) => {
+    setVisibleIndicators((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -754,31 +772,41 @@ function StockPriceChart({
               : null,
           )
           .filter((item): item is LineData<Time> => item !== null);
-      chart
-        .addSeries(LineSeries, {
-          color: "#2563eb",
-          lineWidth: 1,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        })
-        .setData(lineData(5));
-      chart
-        .addSeries(LineSeries, {
-          color: "#b45309",
-          lineWidth: 1,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        })
-        .setData(lineData(10));
-      chart
-        .addSeries(LineSeries, {
-          color: "#7c3aed",
-          lineWidth: 1,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        })
-        .setData(lineData(20));
-      if (technical.upper !== null && technical.lower !== null) {
+      if (visibleIndicators.ma5) {
+        chart
+          .addSeries(LineSeries, {
+            color: "#2563eb",
+            lineWidth: 1,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          })
+          .setData(lineData(5));
+      }
+      if (visibleIndicators.ma10) {
+        chart
+          .addSeries(LineSeries, {
+            color: "#b45309",
+            lineWidth: 1,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          })
+          .setData(lineData(10));
+      }
+      if (visibleIndicators.ma20) {
+        chart
+          .addSeries(LineSeries, {
+            color: "#7c3aed",
+            lineWidth: 1,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          })
+          .setData(lineData(20));
+      }
+      if (
+        visibleIndicators.bollinger &&
+        technical.upper !== null &&
+        technical.lower !== null
+      ) {
         const bollinger = (multiplier: number) =>
           rows
             .map((row, index) => {
@@ -825,7 +853,14 @@ function StockPriceChart({
       .applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
     chart.timeScale().fitContent();
     return () => chart.remove();
-  }, [mode, rows, trades, technical.lower, technical.upper]);
+  }, [
+    mode,
+    rows,
+    trades,
+    technical.lower,
+    technical.upper,
+    visibleIndicators,
+  ]);
 
   if (!rows.length)
     return (
@@ -840,17 +875,69 @@ function StockPriceChart({
     <>
       <div className="stock-chart" ref={containerRef} />
       <div className="technical-summary" aria-label="技术指标当前读数">
-        <span>MA5 {value(technical.ma5)}</span>
-        <span>MA10 {value(technical.ma10)}</span>
-        <span>MA20 {value(technical.ma20)}</span>
-        <span>
+        <button
+          type="button"
+          className={!visibleIndicators.ma5 ? "is-hidden" : undefined}
+          aria-pressed={visibleIndicators.ma5}
+          onClick={() => toggleIndicator("ma5")}
+          title={visibleIndicators.ma5 ? "点击隐藏 MA5" : "点击显示 MA5"}
+        >
+          MA5 {value(technical.ma5)}
+        </button>
+        <button
+          type="button"
+          className={!visibleIndicators.ma10 ? "is-hidden" : undefined}
+          aria-pressed={visibleIndicators.ma10}
+          onClick={() => toggleIndicator("ma10")}
+          title={visibleIndicators.ma10 ? "点击隐藏 MA10" : "点击显示 MA10"}
+        >
+          MA10 {value(technical.ma10)}
+        </button>
+        <button
+          type="button"
+          className={!visibleIndicators.ma20 ? "is-hidden" : undefined}
+          aria-pressed={visibleIndicators.ma20}
+          onClick={() => toggleIndicator("ma20")}
+          title={visibleIndicators.ma20 ? "点击隐藏 MA20" : "点击显示 MA20"}
+        >
+          MA20 {value(technical.ma20)}
+        </button>
+        <button
+          type="button"
+          className={!visibleIndicators.bollinger ? "is-hidden" : undefined}
+          aria-pressed={visibleIndicators.bollinger}
+          onClick={() => toggleIndicator("bollinger")}
+          title={visibleIndicators.bollinger ? "点击隐藏布林线" : "点击显示布林线"}
+        >
           布林 {value(technical.lower)} - {value(technical.upper)}
-        </span>
-        <span>MACD {value(technical.macd)}</span>
-        <span>
+        </button>
+        <button
+          type="button"
+          className={!visibleIndicators.macd ? "is-hidden" : undefined}
+          aria-pressed={visibleIndicators.macd}
+          onClick={() => toggleIndicator("macd")}
+          title={visibleIndicators.macd ? "点击隐藏 MACD" : "点击显示 MACD"}
+        >
+          MACD {value(technical.macd)}
+        </button>
+        <button
+          type="button"
+          className={!visibleIndicators.kdj ? "is-hidden" : undefined}
+          aria-pressed={visibleIndicators.kdj}
+          onClick={() => toggleIndicator("kdj")}
+          title={visibleIndicators.kdj ? "点击隐藏 KDJ" : "点击显示 KDJ"}
+        >
           KDJ {value(technical.k)} / {value(technical.d)}
-        </span>
-        <span>RSI {value(technical.rsi)}</span>
+        </button>
+        <button
+          type="button"
+          className={!visibleIndicators.rsi ? "is-hidden" : undefined}
+          aria-pressed={visibleIndicators.rsi}
+          onClick={() => toggleIndicator("rsi")}
+          title={visibleIndicators.rsi ? "点击隐藏 RSI" : "点击显示 RSI"}
+        >
+          RSI {value(technical.rsi)}
+        </button>
       </div>
     </>
   );
@@ -4577,7 +4664,6 @@ function App() {
   const [showAgent, setShowAgent] = useState(false);
   const [subscriptions, setSubscriptions] = useState<NewsSubscription[]>([]);
   const [subscriptionInput, setSubscriptionInput] = useState("");
-  const [newsAnalyses, setNewsAnalyses] = useState<Record<number, NewsDeepAnalysis>>({});
 
   const industries = useMemo(() => {
     if (!taxonomy) return [];
@@ -4711,46 +4797,6 @@ function App() {
       );
   };
 
-  const deepAnalyzeNews = async (item: NewsItem) => {
-    setNewsAnalyses((current) => ({
-      ...current,
-      [item.id]: { status: "loading" },
-    }));
-    try {
-      const response = await fetch(`${API_BASE}/news/deep-analysis`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ news_id: item.id, model: "deepseek" }),
-      });
-      const body = (await response.json().catch(() => null)) as {
-        analysis?: string;
-        generatedAt?: string;
-        detail?: string;
-      } | null;
-      if (!response.ok || !body?.analysis)
-        throw new Error(body?.detail || "AI 深度分析生成失败");
-      setNewsAnalyses((current) => ({
-        ...current,
-        [item.id]: {
-          status: "success",
-          analysis: body.analysis,
-          generatedAt: body.generatedAt,
-        },
-      }));
-    } catch (requestError) {
-      setNewsAnalyses((current) => ({
-        ...current,
-        [item.id]: {
-          status: "error",
-          error:
-            requestError instanceof Error
-              ? requestError.message
-              : "AI 深度分析生成失败",
-        },
-      }));
-    }
-  };
-
   useEffect(() => {
     // Filter changes intentionally restart the news query with the latest selected values.
     if (taxonomy) void loadNews();
@@ -4882,9 +4928,11 @@ function App() {
                 className={activeTopic === topic ? "topic-active" : ""}
                 key={topic}
                 type="button"
-                onClick={() =>
-                  setActiveTopic(activeTopic === topic ? "" : topic)
-                }
+                onClick={() => {
+                  const nextTopic = activeTopic === topic ? "" : topic;
+                  setActiveTopic(nextTopic);
+                  if (nextTopic) setSubscriptionInput(nextTopic);
+                }}
               >
                 {topic}
               </button>
@@ -4894,7 +4942,8 @@ function App() {
             <input
               value={subscriptionInput}
               onChange={(event) => setSubscriptionInput(event.target.value)}
-              placeholder="订阅代码或关键词"
+              placeholder="订阅关键词"
+              aria-label="订阅关键词"
             />
             <button type="submit" title="添加订阅">
               <Plus size={15} />
@@ -4969,34 +5018,10 @@ function App() {
                     ))}
                     {item.matched_subscriptions?.map((keyword) => (
                       <span className="tag subscription-match" key={keyword}>
-                        订阅 · {keyword}
+                        {keyword}
                       </span>
                     ))}
                   </div>
-                  {newsAnalyses[item.id]?.status === "loading" && (
-                    <div className="news-deep-analysis news-deep-analysis-loading" role="status">
-                      <Sparkles size={15} /> 正在生成投资影响分析...
-                    </div>
-                  )}
-                  {newsAnalyses[item.id]?.status === "success" && (
-                    <section className="news-deep-analysis">
-                      <header>
-                        <span><Sparkles size={15} /> AI 深度分析</span>
-                        {newsAnalyses[item.id]?.generatedAt && (
-                          <time>{formatDate(newsAnalyses[item.id]?.generatedAt || "")}</time>
-                        )}
-                      </header>
-                      <div className="news-deep-analysis-content">
-                        {renderAssistantContent(newsAnalyses[item.id]?.analysis || "")}
-                      </div>
-                    </section>
-                  )}
-                  {newsAnalyses[item.id]?.status === "error" && (
-                    <div className="news-deep-analysis news-deep-analysis-error" role="alert">
-                      <span>{newsAnalyses[item.id]?.error || "AI 深度分析生成失败"}</span>
-                      <button type="button" onClick={() => void deepAnalyzeNews(item)}>重试</button>
-                    </div>
-                  )}
                 </div>
                 <div className="news-card-meta">
                   <strong>{item.source_name}</strong>
@@ -5006,16 +5031,6 @@ function App() {
                       ? `抓取于 ${formatDate(item.fetched_at)}`
                       : ""}
                   </small>
-                  <button
-                    type="button"
-                    className="news-analysis-button"
-                    onClick={() => void deepAnalyzeNews(item)}
-                    disabled={newsAnalyses[item.id]?.status === "loading"}
-                    title="AI 深度分析"
-                  >
-                    <Sparkles size={15} />
-                    <span>{newsAnalyses[item.id]?.status === "loading" ? "分析中" : "AI 分析"}</span>
-                  </button>
                   <button
                     type="button"
                     onClick={() => void setNewsRead(item, !item.is_read)}
