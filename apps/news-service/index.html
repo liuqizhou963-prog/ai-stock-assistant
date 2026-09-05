@@ -561,9 +561,15 @@
 <script type="module" src="./galaxy-background.js"></script>
 <script>
 function openStockAssistant(){
-  var parentOrigin='http://127.0.0.1:5174';
-  try{ if(document.referrer) parentOrigin=new URL(document.referrer).origin; }catch(e){}
-  window.top.location.href=parentOrigin+'/?view=agent';
+  var target=new URL('http://127.0.0.1:5174/?view=agent');
+  try{
+    if(document.referrer){
+      var parentUrl=new URL(document.referrer);
+      target=new URL(parentUrl.href);
+      target.searchParams.set('view','agent');
+    }
+  }catch(e){}
+  window.top.location.href=target.href;
 }
 function boot(){
   var D = window.DATA || {industries:[]};
