@@ -1,0 +1,13 @@
+.investment-news-frame {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #111927;
+}
+
+.investment-news-frame__content {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
