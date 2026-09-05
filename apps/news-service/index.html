@@ -450,8 +450,8 @@
       <span class="logo">▲</span>
       <div class="bt">投资资讯<br><small>Investment News</small></div>
       <button class="refresh" id="refreshBtn" title="刷新:重新抓取 + AI 要点 + 翻译"><span class="ri">⟳</span></button>
-      <button class="assistant-toggle" id="assistantToggle" title="打开 / 收起 AI 个人咨询助手"
-              aria-label="打开 AI 个人咨询助手" aria-expanded="false" aria-controls="assistant">
+      <button class="assistant-toggle" id="assistantToggle" title="进入股票助手"
+              aria-label="进入股票助手">
         <span class="assistant-ai-glyph" aria-hidden="true">AI</span>
       </button>
       <span id="refreshStatus" aria-live="polite" hidden></span>
@@ -461,9 +461,8 @@
       <div class="nav-item" id="viewNews" data-view="news" role="button" tabindex="0" aria-label="切换到资讯看板">
         <span class="dot" style="background:#ff5a1f"></span><span class="nm">资讯看板</span>
       </div>
-      <div class="nav-item" id="viewWorkbench" data-view="workbench" role="button" tabindex="0" aria-label="切换到行情工作台">
-        <span class="dot" style="background:#38bdf8"></span><span class="nm">行情工作台</span>
-        <span class="nav-badge" id="alertBadge" aria-live="polite"></span>
+      <div class="nav-item" id="viewStockAssistant" role="button" tabindex="0" aria-label="进入股票助手">
+        <span class="dot" style="background:#38bdf8"></span><span class="nm">股票助手</span>
       </div>
     </div>
     <div class="nav" id="nav"><div class="nav-label">行业 / SW 一级</div></div>
@@ -557,72 +556,15 @@
       </section>
     </section>
   </main>
-  <button class="assistant-scrim" id="assistantScrim" type="button" tabindex="-1" aria-label="关闭助手"></button>
-  <aside class="assistant" id="assistant" aria-label="AI 个人咨询助手">
-    <button class="assistant-resizer" id="assistantResizer" type="button" aria-label="拖动调整助手宽度"
-            title="拖动调整宽度，方向键微调，双击复位"></button>
-    <div class="assistant-head">
-      <span class="assistant-mark" aria-hidden="true">AI</span>
-      <div class="assistant-title"><strong>个人咨询助手</strong><small>基于当前资讯与我的记忆</small></div>
-      <div class="assistant-head-actions">
-        <button class="assistant-memory-btn" id="memoryBtn" title="查看和管理我的记忆">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5h12v15H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span>记忆</span>
-        </button>
-        <button class="assistant-close-btn" id="assistantClose" title="收起助手" aria-label="收起助手">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
-        </button>
-      </div>
-    </div>
-    <div class="assistant-context" id="assistantContext">当前范围：<b>全部行业</b></div>
-    <div class="assistant-messages" id="assistantMessages">
-      <div class="assistant-welcome" id="assistantWelcome">
-        <strong>从资讯里找到你真正关心的线索。</strong>
-        <p>可以问我某个行业的变化、相关公司动态，或根据你的记忆找文章。回答只做资讯整理，不构成投资建议。</p>
-        <div class="assistant-prompts" id="assistantPrompts"></div>
-      </div>
-    </div>
-    <form class="assistant-composer" id="assistantForm">
-      <div class="assistant-focus" id="assistantFocus" hidden>
-        <span class="assistant-focus-text">
-          <span class="assistant-focus-label">正在追问这条</span>
-          <span class="assistant-focus-title" id="assistantFocusTitle"></span>
-        </span>
-        <button class="assistant-focus-clear" id="assistantFocusClear" type="button" title="取消追问这条" aria-label="取消追问这条">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
-        </button>
-      </div>
-      <label for="assistantInput">向助手提问</label>
-      <div class="assistant-compose-row">
-        <textarea class="assistant-input" id="assistantInput" rows="1" maxlength="1000" placeholder="例如：最近 AI 算力链有什么变化？"></textarea>
-        <button class="assistant-send" id="assistantSend" type="submit" title="发送问题" aria-label="发送问题">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 16 8-16 8 3-8-3-8Z"/><path d="M7 12h13"/></svg>
-        </button>
-      </div>
-      <div class="assistant-error" id="assistantError" role="alert" hidden></div>
-    </form>
-  </aside>
 </div>
 <div class="toast-stack" id="toastStack" role="status" aria-live="polite"></div>
-<dialog class="memory-dialog" id="memoryDialog" aria-labelledby="memoryDialogTitle">
-  <div class="memory-dialog-head">
-    <strong id="memoryDialogTitle">我的记忆</strong>
-    <button class="assistant-close-btn" id="memoryClose" type="button" title="关闭记忆" aria-label="关闭记忆">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
-    </button>
-  </div>
-  <div class="memory-dialog-body">
-    <div class="memory-list" id="memoryList"></div>
-    <form class="memory-form" id="memoryForm">
-      <div class="memory-form-title">新增一条记忆</div>
-      <label class="memory-field"><span>类型</span><select id="memoryType"><option value="watch_topic">关注主题</option><option value="preference">偏好</option><option value="conversation">对话摘要</option></select></label>
-      <label class="memory-field"><span>标题</span><input id="memoryTitle" maxlength="120" required placeholder="例如：关注 AI 算力链"></label>
-      <label class="memory-field"><span>内容</span><textarea id="memoryContent" maxlength="500" required placeholder="例如：希望优先看到芯片、服务器和数据中心相关动态"></textarea></label>
-      <div class="memory-form-foot"><button class="memory-submit" type="submit">保存记忆</button><span class="memory-form-status" id="memoryStatus" aria-live="polite"></span></div>
-    </form>
-  </div>
-</dialog>
 <script type="module" src="./galaxy-background.js"></script>
 <script>
+function openStockAssistant(){
+  var parentOrigin='http://127.0.0.1:5174';
+  try{ if(document.referrer) parentOrigin=new URL(document.referrer).origin; }catch(e){}
+  window.top.location.href=parentOrigin+'/?view=agent';
+}
 function boot(){
   var D = window.DATA || {industries:[]};
   var sourceIndustries = (D.industries || []).map(function(ind){
@@ -792,7 +734,8 @@ function boot(){
       n.style.borderColor = on ? hexA(ind.accent,0.36) : '';
       n.querySelector('.nm').style.color = on ? ind.accent : '';
     });
-    document.getElementById('assistantContext').innerHTML = '当前范围：<b>'+esc(ind.name)+'</b>';
+    var assistantContext=document.getElementById('assistantContext');
+    if(assistantContext) assistantContext.innerHTML = '当前范围：<b>'+esc(ind.name)+'</b>';
     renderMain(ind);
     renderQuickPrompts(ind);
   }
@@ -805,9 +748,9 @@ function boot(){
     document.getElementById('board').hidden = isWorkbench;
     document.getElementById('workbench').hidden = !isWorkbench;
     nav.hidden = isWorkbench;
-    ['viewNews','viewWorkbench'].forEach(function(id){
+    ['viewNews'].forEach(function(id){
       var el = document.getElementById(id);
-      var on = (id === 'viewWorkbench') === isWorkbench;
+      var on = !isWorkbench;
       el.classList.toggle('active', on);
       el.setAttribute('aria-current', on ? 'page' : 'false');
     });
@@ -844,7 +787,7 @@ function boot(){
           var su = safeUrl(url);
           var jump = su ? '<a class="dj" href="'+su+'" target="_blank" rel="noopener" title="跳转原文" style="color:'+ac+'">↗</a>' : '';
           return '<li><span class="b" style="background:'+ac+'"></span><span class="pt">'+esc(t)+'</span>'
-            + '<button class="ask-btn" type="button" data-ask="point" data-index="'+pointIndex+'">问助手</button>'
+             + '<button class="ask-btn" type="button" data-stock-assistant>股票助手</button>'
             + jump + '</li>';
         }).join('') + '</ul></div>'
     ) : '';
@@ -889,7 +832,7 @@ function boot(){
         + (it.subindustry_name?'<span class="rsub">'+esc(it.subindustry_name)+'</span>':'')
         + '</div>'
         + '<div class="ractions">'
-        +   '<button class="ask-btn" type="button" data-ask="item" data-index="'+itemIndex+'">问助手</button>'
+         +   '<button class="ask-btn" type="button" data-stock-assistant>股票助手</button>'
         +   '<button class="ask-btn" type="button" data-save="item" data-index="'+itemIndex+'">收藏</button>'
         + '</div>'
         + '<div class="rmeta">'
@@ -901,13 +844,7 @@ function boot(){
 
     board.className='';
     board.innerHTML = digest + '<div class="list">' + rows + '</div>';
-    board.querySelectorAll('[data-ask]').forEach(function(button){
-      button.onclick = function(){
-        var index = Number(button.dataset.index);
-        if(button.dataset.ask === 'point') askAboutPoint(visiblePoints[index], ind);
-        else askAboutArticle(visibleItems[index], ind);
-      };
-    });
+    board.querySelectorAll('[data-stock-assistant]').forEach(function(button){ button.onclick=openStockAssistant; });
     board.querySelectorAll('[data-save="item"]').forEach(function(button){
       button.onclick = function(){ saveArticle(visibleItems[Number(button.dataset.index)], button); };
     });
@@ -954,48 +891,9 @@ function boot(){
     }catch(e){return '';}
   }
 
-  // 个人咨询助手
-  var assistant = document.getElementById('assistant');
-  var assistantMessages = document.getElementById('assistantMessages');
-  var assistantInput = document.getElementById('assistantInput');
-  var assistantSend = document.getElementById('assistantSend');
-  var assistantError = document.getElementById('assistantError');
-  var memoryDialog = document.getElementById('memoryDialog');
-  var memoryList = document.getElementById('memoryList');
-  var memoryStatus = document.getElementById('memoryStatus');
-  var assistantBusy = false;
+  // 股票助手入口由当前项目处理；资讯页不再创建独立 AI 抽屉。
   var appEl = document.querySelector('.app');
   var assistantToggle = document.getElementById('assistantToggle');
-  var focusContext = null; // 来自面板的“问助手”上下文
-
-  // ---- 抽屉开合 + 宽度记忆 ----
-  var ASSISTANT_MIN_W = 320, ASSISTANT_MAX_W = 720, ASSISTANT_DEFAULT_W = 400;
-  function applyAssistantWidth(width){
-    var value = Math.min(ASSISTANT_MAX_W, Math.max(ASSISTANT_MIN_W, Math.round(width)));
-    appEl.style.setProperty('--assistant-w', value+'px');
-    try{ localStorage.setItem('assistantWidth', String(value)); }catch(e){}
-    return value;
-  }
-  function storedAssistantWidth(){
-    try{ return Number(localStorage.getItem('assistantWidth')) || ASSISTANT_DEFAULT_W; }
-    catch(e){ return ASSISTANT_DEFAULT_W; }
-  }
-  applyAssistantWidth(storedAssistantWidth());
-  function openAssistant(){
-    appEl.classList.add('assistant-open');
-    assistantToggle.setAttribute('aria-expanded','true');
-    try{ localStorage.setItem('assistantOpen','1'); }catch(e){}
-    assistantInput.focus();
-  }
-  function closeAssistant(){
-    appEl.classList.remove('assistant-open');
-    assistantToggle.setAttribute('aria-expanded','false');
-    try{ localStorage.setItem('assistantOpen','0'); }catch(e){}
-    assistantToggle.focus();
-  }
-  function toggleAssistant(){
-    if(appEl.classList.contains('assistant-open')) closeAssistant(); else openAssistant();
-  }
 
   // ---- 全局 toast（价格提醒等跨视图通知，不再写进聊天流） ----
   function showToast(title, message){
@@ -1012,6 +910,7 @@ function boot(){
   }
   function setAlertBadge(count){
     var badge=document.getElementById('alertBadge');
+    if(!badge) return;
     badge.textContent = count>0 ? String(count) : '';
     badge.classList.toggle('on', count>0);
     badge.setAttribute('aria-label', count>0 ? count+' 条价格提醒已触发' : '');
@@ -1029,7 +928,7 @@ function boot(){
     prompts.forEach(function(text){
       var button=document.createElement('button');
       button.type='button'; button.className='assistant-prompt'; button.textContent=text;
-      button.onclick=function(){ openAssistant(); sendAssistantMessage(text); };
+      button.onclick=openStockAssistant;
       box.appendChild(button);
     });
   }
@@ -1493,62 +1392,14 @@ function boot(){
       if(currentView==='workbench') setResearchStatus(e.message,true);
     });
   }
-  function openMemory(){
-    loadMemories();
-    if(memoryDialog.showModal) memoryDialog.showModal(); else memoryDialog.setAttribute('open','');
-  }
-  assistantToggle.onclick=toggleAssistant;
-  document.getElementById('assistantClose').onclick=closeAssistant;
-  document.getElementById('assistantScrim').onclick=closeAssistant;
-  document.getElementById('assistantFocusClear').onclick=function(){
-    setFocusContext(null);
-    assistantInput.placeholder='例如：最近 AI 算力链有什么变化？';
-  };
-  document.addEventListener('keydown',function(event){
-    if(event.key!=='Escape') return;
-    if(memoryDialog.open) return; // <dialog> 自己处理 Esc
-    if(appEl.classList.contains('assistant-open')){ event.preventDefault(); closeAssistant(); }
-  });
-  // 抽屉宽度拖拽（鼠标/触控 + 方向键微调 + 双击复位）
-  (function(){
-    var resizer=document.getElementById('assistantResizer');
-    var dragging=false;
-    function widthFromClientX(clientX){ return window.innerWidth - clientX; }
-    function onMove(event){
-      if(!dragging) return;
-      event.preventDefault();
-      applyAssistantWidth(widthFromClientX(event.touches ? event.touches[0].clientX : event.clientX));
-    }
-    function stop(){
-      if(!dragging) return;
-      dragging=false; document.body.style.userSelect='';
-      window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',stop);
-      window.removeEventListener('touchmove',onMove); window.removeEventListener('touchend',stop);
-    }
-    function start(event){
-      dragging=true; document.body.style.userSelect='none';
-      window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',stop);
-      window.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',stop);
-      event.preventDefault();
-    }
-    resizer.addEventListener('mousedown',start);
-    resizer.addEventListener('touchstart',start,{passive:false});
-    resizer.ondblclick=function(){applyAssistantWidth(ASSISTANT_DEFAULT_W);};
-    resizer.onkeydown=function(event){
-      var step = event.shiftKey ? 40 : 12;
-      if(event.key==='ArrowLeft'){ event.preventDefault(); applyAssistantWidth(assistant.offsetWidth+step); }
-      else if(event.key==='ArrowRight'){ event.preventDefault(); applyAssistantWidth(assistant.offsetWidth-step); }
-      else if(event.key==='Home'){ event.preventDefault(); applyAssistantWidth(ASSISTANT_DEFAULT_W); }
-    };
-  })();
+  document.getElementById('assistantToggle').onclick = openStockAssistant;
   document.getElementById('viewNews').onclick=function(){setView('news');};
-  document.getElementById('viewWorkbench').onclick=function(){setView('workbench');};
-  ['viewNews','viewWorkbench'].forEach(function(id){
+  document.getElementById('viewStockAssistant').onclick=openStockAssistant;
+  ['viewNews','viewStockAssistant'].forEach(function(id){
     document.getElementById(id).onkeydown=function(event){
       if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}
     };
   });
-  document.getElementById('memoryBtn').onclick=openMemory;
   document.getElementById('researchRefresh').onclick=function(){loadWatchlist();loadAlerts();checkAlerts();};
   document.getElementById('researchCompare').onclick=compareWatchlist;
   document.getElementById('researchResultClose').onclick=function(){
@@ -1571,19 +1422,6 @@ function boot(){
     if(chartState.candles.length){var count=chartRangeCount(chartState.mode,chartState.range);chartState.viewEnd=chartState.candles.length;chartState.viewStart=Math.max(0,chartState.viewEnd-count);renderInteractiveChart();}
   };});
   document.querySelectorAll('[data-indicator]').forEach(function(button){button.onclick=function(){var key=button.dataset.indicator;chartState.indicators[key]=!chartState.indicators[key];button.classList.toggle('active',chartState.indicators[key]);renderInteractiveChart();};});
-  document.getElementById('memoryClose').onclick=function(){if(memoryDialog.close) memoryDialog.close(); else memoryDialog.removeAttribute('open');};
-  document.getElementById('assistantForm').onsubmit=function(event){event.preventDefault();sendAssistantMessage();};
-  assistantInput.onkeydown=function(event){if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAssistantMessage();}};
-  document.getElementById('memoryForm').onsubmit=function(event){
-    event.preventDefault();
-    var submit=event.target.querySelector('.memory-submit'); submit.disabled=true; memoryStatus.textContent='保存中…';
-    fetch('/api/memory/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      memory_type:document.getElementById('memoryType').value,title:document.getElementById('memoryTitle').value.trim(),content:document.getElementById('memoryContent').value.trim(),tags:[]
-    })}).then(function(response){return response.json().then(function(data){return {ok:response.ok && data.ok,data:data};});})
-      .then(function(result){if(!result.ok) throw new Error(result.data.error||'保存失败'); event.target.reset(); memoryStatus.textContent='已保存'; return loadMemories();})
-      .catch(function(error){memoryStatus.textContent=error.message;})
-      .finally(function(){submit.disabled=false;});
-  };
   document.getElementById('watchForm').onsubmit=function(event){
     event.preventDefault();
     var symbol=document.getElementById('watchSymbol').value.trim();
@@ -1608,7 +1446,6 @@ function boot(){
   if(active) setActive(active);
   else document.getElementById('board').innerHTML='<div class="empty">暂无可显示的数据。</div>';
   setView('news');
-  try{ if(localStorage.getItem('assistantOpen')==='1') openAssistant(); }catch(e){}
 
   var rb = document.getElementById('refreshBtn');
   function setRefreshState(state, message){
