@@ -1,0 +1,11 @@
+llm.config.json
+llm.config.json.failure-backup
+sources.json.failure-backup
+data.js.interrupted-fetch
+state/
+output/
+.playwright-cli/
+.pytest_cache/
+__pycache__/
+*.pyc
+server*.log

@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0c10">
+<link rel="icon" href="data:,">
+<title>投资资讯 · Investment News</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --background:220 20% 9%; --foreground:220 18% 94%;
+    --card:216 24% 16%; --muted:216 22% 22%; --muted-foreground:216 14% 70%;
+    --border:216 20% 29%; --primary:27 90% 52%; --radius:.5rem;
+    --glass:rgba(29,41,57,.84); --glass-strong:rgba(38,52,70,.92); --glass-soft:rgba(174,195,216,.06);
+  }
+  *{box-sizing:border-box; margin:0; padding:0; border-color:hsl(var(--border));}
+  html,body{height:100%;}
+  body{font-family:'Inter',system-ui,sans-serif; background:#18202c;
+    color:hsl(var(--foreground)); -webkit-font-smoothing:antialiased; font-size:14px; overflow-x:hidden;}
+  body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(circle at 18% 18%, rgba(84,132,190,.20), transparent 0 26%),
+      radial-gradient(circle at 82% 18%, rgba(255,151,92,.10), transparent 0 20%),
+      radial-gradient(circle at 52% 78%, rgba(98,176,166,.10), transparent 0 30%),
+      linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015) 42%);}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+  ::-webkit-scrollbar{width:7px;height:7px;}
+  ::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:6px;}
+  ::-webkit-scrollbar-thumb:hover{background:hsl(var(--muted-foreground));}
+
+  .galaxy-layer{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+    background:
+      radial-gradient(circle at 46% 36%, rgba(88,139,196,.22), transparent 0 30%),
+      radial-gradient(circle at 74% 14%, rgba(255,152,97,.11), transparent 0 20%),
+      radial-gradient(circle at 18% 84%, rgba(133,193,182,.10), transparent 0 24%),
+      linear-gradient(180deg, #1b2431 0%, #111722 100%);}
+  .galaxy-layer canvas{display:block; width:100%; height:100%; opacity:.58; filter:saturate(.72) brightness(.9);}
+
+  .app{position:relative; z-index:1; display:flex; height:100vh; overflow:hidden; background:transparent; --assistant-w:400px;}
+  .main{min-width:0;}
+
+  /* ---- 个人咨询助手（默认收起的抽屉） ---- */
+  .assistant{position:relative; width:var(--assistant-w); flex:0 0 var(--assistant-w); min-width:0;
+    background:linear-gradient(180deg,rgba(31,44,61,.96),rgba(22,32,46,.96));
+    border-left:1px solid hsl(var(--border)); display:none; flex-direction:column;}
+  .app.assistant-open .assistant{display:flex;}
+  .assistant-resizer{position:absolute; top:0; left:-3px; z-index:6; width:7px; height:100%; padding:0;
+    border:0; background:transparent; cursor:col-resize;}
+  .assistant-resizer:hover,.assistant-resizer:focus-visible{background:hsl(var(--primary)/.30); outline:none;}
+  .assistant-scrim{display:none;}
+  .assistant-head{display:flex; align-items:center; gap:10px; min-height:68px; padding:14px 16px;
+    border-bottom:1px solid hsl(var(--border)); background:rgba(48,64,83,.88); backdrop-filter:blur(12px);}
+  .assistant-mark{width:30px; height:30px; flex:0 0 30px; border-radius:9px; display:grid; place-items:center;
+    color:#fff; background:linear-gradient(135deg,#22d3ee,#2563eb); font-size:11px; font-weight:800; letter-spacing:.02em;
+    box-shadow:0 6px 18px rgba(34,211,238,.22);}
+  .assistant-title{min-width:0; flex:1;}
+  .assistant-title strong{display:block; font-size:14px; line-height:1.35;}
+  .assistant-title small{display:block; margin-top:2px; color:hsl(var(--muted-foreground)); font-size:11px;}
+  .assistant-head-actions{display:flex; align-items:center; gap:6px;}
+  .assistant-memory-btn,.assistant-close-btn{min-width:34px; height:34px; border:1px solid hsl(var(--border));
+    border-radius:8px; background:transparent; color:hsl(var(--muted-foreground)); cursor:pointer; display:grid; place-items:center;
+    transition:color .16s, border-color .16s, background .16s;}
+  .assistant-memory-btn{display:flex; gap:6px; padding:0 9px; font-size:11px;}
+  .assistant-memory-btn:hover,.assistant-close-btn:hover{color:hsl(var(--foreground));
+    border-color:hsl(var(--primary)/.5); background:hsl(var(--primary)/.09);}
+  .assistant-memory-btn:focus-visible,.assistant-close-btn:focus-visible,
+  .assistant-prompt:focus-visible,.assistant-send:focus-visible,.memory-submit:focus-visible,
+  .memory-delete:focus-visible{outline:2px solid hsl(var(--primary)); outline-offset:2px;}
+  .assistant-memory-btn svg,.assistant-close-btn svg,.assistant-send svg{width:15px;height:15px;
+    fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .assistant-context{padding:10px 16px; border-bottom:1px solid hsl(var(--border)); color:hsl(var(--muted-foreground)); background:rgba(34,48,65,.72);
+    font-size:11px; line-height:1.45;}
+  .assistant-context b{color:hsl(var(--foreground)); font-weight:600;}
+  /* ---- 行情工作台（主区视图，不再寄生在助手里） ---- */
+  .workbench{padding:16px 24px 48px; width:100%; max-width:none; display:grid; gap:12px;
+    grid-template-columns:minmax(218px,248px) minmax(0,1fr) minmax(230px,278px); align-items:stretch;}
+  .workbench[hidden]{display:none;}
+  .research-panel{border:1px solid hsl(var(--border)); border-radius:9px; background:#1d2a3b; padding:14px;}
+  .research-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}.research-head strong{font-size:13px;flex:1;min-width:120px;}
+  .research-refresh,.research-action{border:1px solid hsl(var(--border));background:transparent;color:hsl(var(--muted-foreground));border-radius:6px;padding:5px 9px;cursor:pointer;font-size:11px;}
+  .research-refresh:hover,.research-action:hover{color:hsl(var(--foreground));border-color:hsl(var(--primary)/.55);}
+  .research-refresh:focus-visible,.research-action:focus-visible{outline:2px solid hsl(var(--primary));outline-offset:2px;}
+  .research-form{display:flex;gap:6px;margin-top:11px;flex-wrap:wrap;}
+  .research-form input,.research-form select{min-width:0;flex:1;border:1px solid hsl(var(--border));background:rgba(16,27,41,.48);color:hsl(var(--foreground));border-radius:6px;padding:7px 8px;font-size:12px;}
+  .research-form input:focus,.research-form select:focus{outline:2px solid hsl(var(--primary)/.5);outline-offset:1px;}
+  .research-form button{flex:0 0 auto;}.research-list{display:flex;flex-direction:column;gap:7px;margin-top:11px;}
+  .research-item{border:1px solid hsl(var(--border));border-radius:8px;padding:9px 10px;background:rgba(70,89,110,.30);}
+  .research-item-top{display:flex;align-items:center;gap:8px;}.research-item-name{font-size:12px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .research-item-price{font:12px 'JetBrains Mono',monospace;}.research-item-change{font:11px 'JetBrains Mono',monospace;}.research-item-change.up{color:#4ade80}.research-item-change.down{color:#f87171}
+  .research-item-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}.research-item-actions button{font-size:11px;padding:4px 8px;}
+  .research-chart{width:100%;display:block;margin-top:9px;border:1px solid hsl(var(--border));border-radius:6px;}
+  .research-empty{font-size:12px;color:hsl(var(--muted-foreground));padding:9px 2px;}
+  .research-status{min-height:17px;margin-top:9px;color:hsl(var(--muted-foreground));font-size:11px;line-height:1.4;}
+  .research-status.error{color:#fca5a5;}
+  .research-alert-item .research-item-top{align-items:flex-start;}
+  .research-alert-state{flex:0 0 auto;color:#86efac;font-size:11px;}
+  .research-alert-state.triggered{color:#fbbf24;}
+  .research-result{margin-top:11px;padding:10px 12px;border:1px solid hsl(var(--border));border-radius:8px;background:rgba(70,89,110,.30);font-size:12px;line-height:1.5;overflow-x:auto;}
+  .research-result[hidden]{display:none;}
+  .research-panel-wide{grid-column:1 / -1;}
+  .data-query-panel{background:#182b3a;border-color:rgba(56,189,248,.38);}
+  .data-query-head small{color:hsl(var(--muted-foreground));font-size:10px;line-height:1.4;}
+  .data-query-form{display:flex;gap:8px;margin-top:11px;align-items:stretch;}
+  .data-query-form textarea{min-height:54px;flex:1;resize:vertical;border:1px solid hsl(var(--border));background:rgba(16,27,41,.48);color:hsl(var(--foreground));border-radius:6px;padding:8px 9px;font:12px/1.45 inherit;}
+  .data-query-form textarea:focus{outline:2px solid hsl(190 78% 56%/.5);outline-offset:1px;border-color:hsl(190 78% 56%/.55);}
+  .data-query-form button{align-self:flex-end;min-height:36px;}
+  .data-query-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+  .data-query-presets button{border:1px solid hsl(var(--border));border-radius:5px;background:rgba(16,27,41,.44);color:hsl(var(--muted-foreground));padding:5px 8px;font:11px inherit;cursor:pointer;}
+  .data-query-presets button:hover,.data-query-presets button:focus-visible{border-color:hsl(190 78% 56%/.7);color:hsl(var(--foreground));outline:none;}
+  .data-query-trace{margin-top:10px;border-top:1px solid hsl(var(--border));padding-top:9px;color:hsl(var(--muted-foreground));font-size:11px;}
+  .data-query-trace summary{cursor:pointer;color:hsl(var(--foreground));}
+  .data-query-trace pre{margin:8px 0 0;max-height:260px;overflow:auto;padding:9px;border:1px solid hsl(var(--border));border-radius:6px;background:#101b29;white-space:pre-wrap;font:10px/1.45 'JetBrains Mono',monospace;}
+  .workbench-watch,.workbench-side{min-width:0;display:flex;flex-direction:column;gap:12px;}
+  .workbench-watch>.research-panel:first-child{flex:1;min-height:0;}
+  .watch-panel-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .watch-panel-head strong{font-size:14px;flex:1;}
+  .watch-panel-head small{font-size:10px;color:hsl(var(--muted-foreground));font-family:'JetBrains Mono',monospace;}
+  .watch-search{display:flex;gap:6px;margin-bottom:12px;}
+  .watch-search input{min-width:0;flex:1;border:1px solid hsl(var(--border));background:#142131;color:hsl(var(--foreground));border-radius:6px;padding:9px 9px;font-size:12px;}
+  .watch-search input:focus{outline:2px solid hsl(var(--primary)/.5);outline-offset:1px;}
+  .watch-search button{white-space:nowrap;}
+  .watchlist-scroll{min-height:120px;max-height:calc(100vh - 310px);overflow:auto;padding-right:2px;}
+  .watchlist-scroll .research-list{margin-top:0;}
+  .watch-row{display:block;padding:10px 9px;border:1px solid transparent;border-radius:7px;background:#24354a;cursor:pointer;transition:background .16s,border-color .16s;}
+  .watch-row:hover{background:#2c4057;border-color:hsl(var(--border));}
+  .watch-row.active{background:#28445a;border-color:hsl(190 78% 56%/.48);box-shadow:inset 3px 0 0 #38bdf8;}
+  .watch-row .research-item-top{gap:5px;}
+  .watch-row .research-item-name{font-size:12px;}
+  .watch-row .research-item-price{font-size:12px;}
+  .watch-row .research-item-change{display:block;margin-top:4px;font-size:10px;text-align:right;}
+  .watch-row .research-item-actions{margin-top:8px;}
+  .watch-row .research-item-actions button{padding:3px 6px;font-size:10px;}
+  .watch-row .research-fundamentals,.watch-row .research-chart{display:none;}
+  .watch-row .research-item-actions .watch-remove{margin-left:auto;}
+  .chart-panel{min-width:0;min-height:620px;display:flex;flex-direction:column;background:#172638;border-color:#34485e;}
+  .chart-top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid hsl(var(--border));}
+  .chart-instrument{min-width:180px;flex:1;}
+  .chart-instrument strong{display:block;font-size:18px;line-height:1.25;}
+  .chart-instrument small{display:block;margin-top:4px;color:hsl(var(--muted-foreground));font:11px 'JetBrains Mono',monospace;}
+  .chart-quote{display:flex;align-items:baseline;gap:9px;font-family:'JetBrains Mono',monospace;}
+  .chart-quote strong{font-size:23px;line-height:1;color:#f8fafc;}
+  .chart-quote span{font-size:12px;font-weight:600;}
+  .chart-quote.up span{color:#4ade80}.chart-quote.down span{color:#f87171}
+  .chart-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;}
+  .chart-tabs,.chart-ranges,.indicator-tools{display:flex;gap:4px;flex-wrap:wrap;}
+  .chart-tab,.chart-range,.indicator-toggle{min-height:30px;padding:5px 9px;border:1px solid hsl(var(--border));border-radius:5px;background:#203246;color:hsl(var(--muted-foreground));font-size:11px;cursor:pointer;}
+  .chart-tab:hover,.chart-range:hover,.indicator-toggle:hover{color:hsl(var(--foreground));border-color:hsl(190 78% 56%/.55);}
+  .chart-tab.active,.chart-range.active,.indicator-toggle.active{color:#dff9ff;background:hsl(190 78% 56%/.15);border-color:hsl(190 78% 56%/.58);}
+  .chart-tab:focus-visible,.chart-range:focus-visible,.indicator-toggle:focus-visible{outline:2px solid #38bdf8;outline-offset:2px;}
+  .chart-range-label{margin-left:auto;color:hsl(var(--muted-foreground));font:10px 'JetBrains Mono',monospace;align-self:center;}
+  .chart-viewport{position:relative;min-height:380px;height:clamp(400px,58vh,620px);margin-top:10px;border:1px solid #33475d;border-radius:7px;background:#101b29;overflow:hidden;touch-action:none;}
+  #marketChart{display:block;width:100%;height:100%;user-select:none;}
+  .chart-tooltip{position:absolute;z-index:3;display:none;min-width:148px;padding:8px 9px;border:1px solid hsl(190 78% 56%/.4);border-radius:6px;background:#152437;box-shadow:0 10px 28px rgba(0,0,0,.28);font:10px/1.55 'JetBrains Mono',monospace;color:#dbeafe;pointer-events:none;}
+  .chart-tooltip strong{display:block;margin-bottom:3px;color:#f8fafc;font-size:11px;}
+  .chart-empty{position:absolute;inset:0;display:grid;place-items:center;color:hsl(var(--muted-foreground));font-size:12px;pointer-events:none;}
+  .chart-empty[hidden]{display:none;}
+  .chart-loading{position:absolute;inset:auto 12px 10px auto;color:#93c5fd;font:10px 'JetBrains Mono',monospace;}
+  .chart-legend{display:flex;align-items:center;gap:12px;min-height:24px;color:hsl(var(--muted-foreground));font-size:10px;}
+  .chart-legend span{display:inline-flex;align-items:center;gap:5px;}.chart-legend i{width:9px;height:2px;display:inline-block;border-radius:2px;}
+  .indicator-tools{margin-top:7px;}
+  .chart-footnote{margin-top:7px;color:hsl(var(--muted-foreground));font-size:10px;line-height:1.4;}
+  .quote-panel{padding:14px;background:#1d2a3b;border:1px solid hsl(var(--border));border-radius:9px;}
+  .quote-panel h2{font-size:13px;margin-bottom:11px;}
+  .quote-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 12px;}
+  .quote-cell span{display:block;color:hsl(var(--muted-foreground));font-size:10px;margin-bottom:3px;}.quote-cell strong{font:12px 'JetBrains Mono',monospace;color:#e2e8f0;}
+  .quote-source{margin-top:12px;color:hsl(var(--muted-foreground));font-size:10px;line-height:1.45;}
+  .side-alert-panel{flex:1;min-height:0;}
+  .side-alert-panel .research-list{max-height:240px;overflow:auto;}
+
+  /* ---- 全局价格提醒 toast ---- */
+  .toast-stack{position:fixed; top:14px; right:14px; z-index:60; display:flex; flex-direction:column; gap:8px;
+    width:min(340px,calc(100vw - 28px)); pointer-events:none;}
+  .toast{display:flex; align-items:flex-start; gap:9px; padding:11px 12px; border:1px solid hsl(27 90% 52%/.42); border-radius:10px;
+    background:var(--glass-strong); box-shadow:0 14px 40px rgba(0,0,0,.42); font-size:12px; line-height:1.5; pointer-events:auto;}
+  .toast-body{flex:1;min-width:0;overflow-wrap:anywhere;}
+  .toast-title{display:block;font-weight:600;margin-bottom:3px;}
+  .toast-close{flex:0 0 auto;width:24px;height:24px;padding:0;border:0;border-radius:5px;background:transparent;
+    color:hsl(var(--muted-foreground));cursor:pointer;display:grid;place-items:center;}
+  .toast-close:hover{color:hsl(var(--foreground));background:hsl(var(--muted));}
+  .toast-close svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+  .nav-badge{min-width:18px;height:18px;padding:0 5px;border-radius:999px;display:none;place-items:center;
+    background:hsl(27 90% 52%);color:#fff;font:10px/1 'JetBrains Mono',monospace;font-weight:700;}
+  .nav-badge.on{display:grid;}
+  .assistant-messages{flex:1; min-height:0; overflow:auto; padding:18px 14px 14px; display:flex; flex-direction:column; gap:14px;}
+  .assistant-welcome{padding:16px; border:1px solid hsl(27 90% 52% / .28); border-radius:11px;
+    background:linear-gradient(145deg,rgba(75,95,117,.44),rgba(42,59,78,.42));}
+  .assistant-welcome strong{display:block; font-size:14px; line-height:1.45;}
+  .assistant-welcome p{margin-top:7px; color:hsl(var(--muted-foreground)); font-size:12px; line-height:1.55;}
+  .assistant-prompts{display:flex; flex-wrap:wrap; gap:7px; margin-top:14px;}
+  .assistant-prompt{border:1px solid hsl(var(--border)); border-radius:7px; padding:7px 9px; background:rgba(115,137,158,.12);
+    color:hsl(var(--muted-foreground)); cursor:pointer; font:inherit; font-size:11px; text-align:left;
+    transition:color .16s, border-color .16s, background .16s;}
+  .assistant-prompt:hover{color:hsl(var(--foreground)); border-color:hsl(var(--primary)/.55); background:hsl(var(--primary)/.08);}
+  .assistant-message{display:flex; flex-direction:column; gap:5px; max-width:92%;}
+  .assistant-message.user{align-self:flex-end; align-items:flex-end;}
+  .assistant-message.assistant{align-self:flex-start; align-items:flex-start;}
+  .assistant-bubble{padding:10px 12px; border:1px solid hsl(var(--border)); border-radius:10px; font-size:13px; line-height:1.55;
+    white-space:pre-wrap; overflow-wrap:anywhere;}
+  .assistant-bubble.assistant-markdown{white-space:normal;overflow-x:auto;}
+  .assistant-markdown h3{font-size:13px;margin:0 0 8px;font-weight:700;}.assistant-markdown p{margin:7px 0;}
+  .assistant-markdown table{width:100%;border-collapse:collapse;font-size:11px;line-height:1.4;margin:8px 0;min-width:520px;}
+  .assistant-markdown th,.assistant-markdown td{padding:5px 6px;border:1px solid hsl(var(--border));text-align:left;white-space:nowrap;}
+  .assistant-markdown th{background:hsl(var(--muted));font-weight:600;}.assistant-markdown code{font:11px 'JetBrains Mono',monospace;color:hsl(var(--primary));}
+  .assistant-message.user .assistant-bubble{background:hsl(var(--primary)/.16); border-color:hsl(var(--primary)/.28);}
+  .assistant-message.assistant-quoted .assistant-bubble{background:rgba(115,137,158,.16); border-style:dashed;
+    color:hsl(var(--muted-foreground)); font-size:12px;}
+  .assistant-message.assistant-quoted .assistant-time{display:none;}
+  .assistant-message.assistant .assistant-bubble{background:rgba(76,96,117,.30);}
+  .assistant-time{color:hsl(var(--muted-foreground)); font:10px 'JetBrains Mono',monospace;}
+  .assistant-typing{display:flex; align-items:center; gap:4px; min-width:52px;}
+  .assistant-typing i{width:5px; height:5px; border-radius:50%; background:hsl(var(--muted-foreground)); animation:assistantDot 1s infinite ease-in-out;}
+  .assistant-typing i:nth-child(2){animation-delay:.12s}.assistant-typing i:nth-child(3){animation-delay:.24s}
+  @keyframes assistantDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+  .assistant-articles{width:100%; display:flex; flex-direction:column; gap:7px;}
+  .assistant-article{position:relative;display:block; padding:10px 42px 10px 11px; border:1px solid hsl(var(--border)); border-radius:9px;
+    background:rgba(76,96,117,.25); color:inherit; text-decoration:none; transition:border-color .16s, background .16s;}
+  .assistant-article:hover{border-color:hsl(var(--primary)/.45); background:hsl(var(--muted)/.55);}
+  .assistant-dismiss{display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid transparent;border-radius:6px;
+    background:transparent;color:hsl(var(--muted-foreground));cursor:pointer;transition:color .14s,border-color .14s,background .14s;}
+  .assistant-dismiss:hover{color:hsl(var(--foreground));border-color:hsl(var(--border));background:hsl(var(--muted));}
+  .assistant-dismiss:focus-visible{outline:2px solid hsl(var(--primary));outline-offset:1px;}
+  .assistant-dismiss svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  .assistant-article-dismiss{position:absolute;top:8px;right:8px;}
+  .assistant-article-title{font-size:12px; font-weight:600; line-height:1.45;}
+  .assistant-article-meta{display:flex; gap:8px; margin-top:5px; color:hsl(var(--muted-foreground)); font:10px 'JetBrains Mono',monospace;}
+  .assistant-article-reason{margin-top:6px; color:hsl(var(--muted-foreground)); font-size:11px; line-height:1.45;}
+  .assistant-memory-suggestions{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .assistant-memory-suggestion{display:inline-flex; align-items:center; gap:3px; border:1px solid hsl(27 90% 52% / .35);
+    border-radius:6px; padding:3px 4px 3px 7px; background:hsl(27 90% 52% / .08); color:hsl(var(--foreground));}
+  .assistant-memory-save{min-height:28px;padding:2px 3px;border:0;background:transparent;color:inherit;cursor:pointer;font:inherit;font-size:11px;text-align:left;}
+  .assistant-memory-save:hover{color:hsl(var(--primary));}
+  .assistant-memory-save:disabled{cursor:default;opacity:.6;}
+  .assistant-memory-dismiss{width:26px;height:26px;flex:0 0 26px;}
+  .assistant-article-actions{display:flex;gap:6px;margin-top:9px;}
+  .assistant-article-open{display:inline-flex;align-items:center;height:26px;padding:0 9px;border:1px solid hsl(var(--border));border-radius:6px;font-size:11px;text-decoration:none;color:hsl(var(--muted-foreground));transition:color .14s,border-color .14s;}
+  .assistant-article-open:hover{color:hsl(var(--foreground));border-color:hsl(var(--primary)/.5);}
+  a.assistant-article-title{color:inherit;text-decoration:none;display:block;}
+  a.assistant-article-title:hover{color:hsl(var(--primary));}
+  .assistant-article-save{display:inline-flex;align-items:center;height:26px;padding:0 9px;border:1px solid hsl(27 90% 52%/.35);border-radius:6px;background:hsl(27 90% 52%/.08);color:hsl(var(--foreground));cursor:pointer;font-size:11px;transition:background .14s,border-color .14s;}
+  .assistant-article-save:hover{background:hsl(27 90% 52%/.18);border-color:hsl(var(--primary)/.65);}
+  .assistant-article-save:disabled{cursor:default;opacity:.55;}
+  .assistant-composer{padding:12px 14px 14px; border-top:1px solid hsl(var(--border)); background:rgba(42,57,75,.94); backdrop-filter:blur(12px);}
+  .assistant-composer label{display:block; margin:0 0 6px 2px; color:hsl(var(--muted-foreground)); font-size:10px;}
+  .assistant-compose-row{display:flex; align-items:flex-end; gap:8px;}
+  .assistant-input{flex:1; min-width:0; min-height:42px; max-height:120px; resize:vertical; padding:10px 11px;
+    border:1px solid hsl(var(--border)); border-radius:8px; background:rgba(15,27,41,.52); color:hsl(var(--foreground));
+    font:13px/1.45 'Inter',system-ui,sans-serif;}
+  .assistant-input::placeholder{color:hsl(var(--muted-foreground));}
+  .assistant-input:focus{outline:2px solid hsl(var(--primary)/.5); outline-offset:1px; border-color:hsl(var(--primary)/.6);}
+  .assistant-send{width:42px; height:42px; flex:0 0 42px; border:0; border-radius:8px; background:hsl(var(--primary));
+    color:#fff; cursor:pointer; display:grid; place-items:center; transition:filter .16s, opacity .16s;}
+  .assistant-send:hover{filter:brightness(1.1);}.assistant-send:disabled{cursor:wait;opacity:.5;filter:none;}
+  .assistant-error{color:#fca5a5; font-size:11px; line-height:1.4; margin-top:7px;}
+  .assistant-toggle{display:grid; min-width:34px; height:30px; margin-left:4px; padding:0 4px; border:1px solid rgba(34,211,238,.42); border-radius:8px;
+    background:rgba(34,211,238,.13); color:#67e8f9; cursor:pointer; place-items:center; box-shadow:0 5px 16px rgba(34,211,238,.12);}
+  .app.assistant-open .assistant-toggle{border-color:rgba(103,232,249,.85); background:rgba(34,211,238,.26); color:#fff;}
+  .assistant-toggle:hover{color:#fff; border-color:rgba(103,232,249,.82); background:rgba(34,211,238,.24);}
+  .assistant-ai-glyph{display:grid; place-items:center; min-width:25px; height:20px; padding:0 3px; border-radius:5px;
+    color:#fff; background:linear-gradient(135deg,#06b6d4,#2563eb); font:800 11px/1 'Inter',system-ui,sans-serif; letter-spacing:.03em;}
+
+  /* ---- 记忆对话框 ---- */
+  .memory-dialog{width:min(460px,calc(100vw - 28px)); max-height:min(720px,calc(100vh - 28px)); padding:0; border:1px solid hsl(var(--border));
+    border-radius:12px; background:var(--glass-strong); color:hsl(var(--foreground)); box-shadow:0 20px 70px rgba(0,0,0,.55);}
+  .memory-dialog::backdrop{background:rgba(0,0,0,.62);backdrop-filter:blur(3px);}
+  .memory-dialog-head{display:flex;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid hsl(var(--border));}
+  .memory-dialog-head strong{flex:1;font-size:14px;}.memory-dialog-body{padding:14px 16px;overflow:auto;max-height:calc(100vh - 160px);}
+  .memory-list{display:flex;flex-direction:column;gap:8px;}.memory-empty{padding:18px 4px;color:hsl(var(--muted-foreground));font-size:12px;}
+  .memory-item{display:flex;align-items:flex-start;gap:10px;padding:10px 11px;border:1px solid hsl(var(--border));border-radius:9px;background:rgba(70,89,110,.30);}
+  .memory-item-main{flex:1;min-width:0;}.memory-item-title{font-size:12px;font-weight:600;line-height:1.4;}
+  .memory-item-content{margin-top:4px;color:hsl(var(--muted-foreground));font-size:11px;line-height:1.45;overflow-wrap:anywhere;}
+  .memory-item-meta{margin-top:6px;color:hsl(var(--muted-foreground));font:10px 'JetBrains Mono',monospace;}
+  .memory-delete{border:0;background:transparent;color:hsl(var(--muted-foreground));cursor:pointer;padding:4px;border-radius:5px;}
+  .memory-delete:hover{color:#fca5a5;background:rgba(239,68,68,.1);}.memory-form{margin-top:16px;padding-top:15px;border-top:1px solid hsl(var(--border));}
+  .memory-form-title{font-size:12px;font-weight:600;margin-bottom:10px;}.memory-field{display:block;margin-bottom:9px;}
+  .memory-field span{display:block;margin:0 0 5px 1px;color:hsl(var(--muted-foreground));font-size:11px;}
+  .memory-field input,.memory-field textarea,.memory-field select{width:100%;padding:8px 9px;border:1px solid hsl(var(--border));border-radius:7px;
+    background:rgba(15,27,41,.52);color:hsl(var(--foreground));font:12px/1.4 'Inter',system-ui,sans-serif;}
+  .memory-field textarea{min-height:64px;resize:vertical;}.memory-field input:focus,.memory-field textarea:focus,.memory-field select:focus{outline:2px solid hsl(var(--primary)/.5);outline-offset:1px;}
+  .memory-form-foot{display:flex;align-items:center;gap:10px;margin-top:11px;}.memory-submit{border:0;border-radius:7px;padding:8px 11px;background:hsl(var(--primary));color:#fff;cursor:pointer;font-size:12px;}
+  .memory-submit:disabled{cursor:wait;opacity:.55;}.memory-form-status{color:hsl(var(--muted-foreground));font-size:11px;}
+
+  /* ---- 侧边栏 ---- */
+  .sidebar{width:284px; flex-shrink:0; background:linear-gradient(180deg, rgba(30,40,56,.94) 0%, rgba(18,25,36,.94) 100%);
+    border-right:1px solid hsl(var(--border)); display:flex; flex-direction:column; min-height:0;}
+  .brand{display:flex; align-items:center; gap:9px; padding:16px;
+    border-bottom:1px solid rgba(255,255,255,.08); background:rgba(40,52,69,.88); backdrop-filter:blur(12px); font-weight:700; font-size:15px; letter-spacing:-.01em;}
+  .brand .logo{width:22px; height:22px; border-radius:6px;
+    background:hsl(var(--primary)); display:grid; place-items:center; color:#fff; font-size:13px; font-weight:800;}
+  .brand small{color:hsl(var(--muted-foreground)); font-weight:500; font-size:11px;}
+  .refresh{margin-left:auto; width:30px; height:30px; flex-shrink:0; border-radius:8px; padding:0;
+    border:1px solid hsl(var(--border)); background:transparent; color:hsl(var(--muted-foreground));
+    cursor:pointer; display:grid; place-items:center; transition:all .14s;}
+  .refresh:hover{color:hsl(var(--primary)); border-color:hsl(var(--primary)/.45); background:hsl(var(--primary)/.10);}
+  .refresh:focus-visible,.nav-item:focus-visible{outline:2px solid hsl(var(--primary));outline-offset:2px;}
+  .refresh .ri{font-size:17px; line-height:1; display:block;}
+  .refresh.spin{color:hsl(var(--primary)); border-color:hsl(var(--primary)/.45); pointer-events:none;}
+  .refresh:disabled{cursor:wait;opacity:.72;}
+  .refresh.spin .ri{animation:spin .9s linear infinite;}
+  #refreshStatus{display:block;max-width:150px;margin-left:8px;color:hsl(var(--muted-foreground));font-size:10px;line-height:1.25;}
+  #refreshStatus.error{color:#fca5a5;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .nav-views{flex:0 0 auto; padding:8px 8px 4px; display:flex; flex-direction:column; gap:5px;
+    border-bottom:1px solid rgba(255,255,255,.08);}
+  .nav{flex:1; min-height:0; overflow:auto; padding:10px 8px; display:flex; flex-direction:column; gap:5px;}
+  .nav[hidden]{display:none;}
+  .nav-label{font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    color:hsl(var(--muted-foreground)); padding:8px 12px 4px; position:sticky; top:0; z-index:2;
+    background:linear-gradient(180deg,rgba(30,40,56,.98),rgba(30,40,56,.90)); backdrop-filter:blur(10px);}
+  .nav-item{display:flex; align-items:center; gap:10px; min-height:34px; padding:7px 11px; border:1px solid rgba(255,255,255,.08); border-radius:8px;
+    background:rgba(39,50,66,.72); cursor:pointer; color:hsl(var(--muted-foreground)); transition:color .16s, border-color .16s, background .16s, box-shadow .16s; user-select:none;}
+  .nav-item:hover{border-color:rgba(255,255,255,.18); background:rgba(48,61,79,.84); color:hsl(var(--foreground));}
+  .nav-item .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .nav-item .nm{flex:1; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .nav-item .cnt{font-size:11px; color:hsl(var(--muted-foreground));}
+  .nav-item.active{font-weight:600; box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 26px rgba(0,0,0,.18);} /* 颜色由 JS 按行业色注入 */
+  .foot{border-top:1px solid rgba(255,255,255,.08); background:rgba(28,36,49,.78); padding:12px 16px;
+    font-size:11px; color:hsl(var(--muted-foreground)); line-height:1.6;}
+
+  /* ---- 主区 ---- */
+  .main{flex:1; overflow:auto;}
+  .head{padding:26px 34px 18px; border-bottom:1px solid hsl(var(--border)); position:sticky; top:0;
+    background:rgba(43,58,76,.86); backdrop-filter:blur(14px); z-index:5;}
+  .head .ttl{display:flex; align-items:center; gap:12px;}
+  .head .bdg{width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-size:15px;}
+  .head h1{font-size:24px; font-weight:700; letter-spacing:-.02em;}
+  .head .sub{margin-top:7px; font-size:12.5px; color:hsl(var(--muted-foreground));}
+  .head .sub b{color:hsl(var(--foreground));}
+  .head .sub .pill{display:inline-block; padding:1px 8px; border-radius:999px; margin-left:6px;
+    font-size:11px; font-family:'JetBrains Mono',monospace;}
+
+  /* ---- 长条列表(一行一条) ---- */
+  .list{padding:16px 30px 60px; display:flex; flex-direction:column; gap:6px; max-width:1280px;}
+  .row{display:flex; align-items:center; gap:14px; padding:11px 16px; border:1px solid hsl(var(--border));
+    border-radius:10px; background:rgba(43,58,76,.78); transition:border-color .14s, background .14s, box-shadow .14s;}
+  .row:hover{background:rgba(58,76,98,.88); box-shadow:0 12px 30px rgba(0,0,0,.16);}
+  .row .rdot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .row .rbody{flex:1; min-width:0;}
+  .row .rt{font-weight:600; font-size:14.5px; line-height:1.4; letter-spacing:-.005em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .row a.rt{color:inherit; text-decoration:none; display:block;}
+  .row a.rt:hover{color:hsl(var(--primary));}
+  .row .rs{margin-top:2px; font-size:12px; line-height:1.4; color:hsl(var(--muted-foreground));
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .row .rmeta{flex-shrink:0; display:flex; align-items:center; gap:12px;}
+  .row .rsrc{font-family:'JetBrains Mono',monospace; font-size:11px; padding:2px 9px; border-radius:6px;
+    font-weight:500; white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis;}
+  .row .rtm{font-family:'JetBrains Mono',monospace; font-size:12px; color:hsl(var(--muted-foreground));
+    white-space:nowrap; min-width:84px; text-align:right; font-variant-numeric:tabular-nums;}
+  .row .rtm small{display:block;margin-top:2px;font:10px 'JetBrains Mono',monospace;color:hsl(var(--muted-foreground));opacity:.72;}
+  .empty{padding:50px 34px; color:hsl(var(--muted-foreground)); font-size:13px;}
+  /* ---- AI 今日要点卡 ---- */
+  .digest{margin:18px 30px 2px; max-width:1280px; border:1px solid; border-radius:14px; padding:16px 20px 15px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}
+  .digest .dh{font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; letter-spacing:.06em;
+    margin-bottom:12px; display:flex; align-items:center; gap:7px;}
+  .digest .dh .dn{color:hsl(var(--muted-foreground)); font-weight:400; letter-spacing:0;}
+  .digest ul{list-style:none; display:flex; flex-direction:column; gap:9px;}
+  .digest li{display:flex; align-items:flex-start; gap:11px; font-size:14.5px; line-height:1.5; color:hsl(var(--foreground));}
+  .digest li .b{width:6px; height:6px; border-radius:50%; margin-top:7px; flex-shrink:0;}
+  .digest li .pt{flex:1; min-width:0;}
+  .digest li .dj{flex-shrink:0; text-decoration:none; font-size:14px; font-weight:700; opacity:.4;
+    margin-top:0; padding:0 2px; transition:opacity .12s, transform .12s; line-height:1.5;}
+  .digest li:hover .dj{opacity:.85;}
+  .digest li .dj:hover{opacity:1; transform:translate(1px,-1px);}
+  /* ---- 面板 → 助手的联动入口 ---- */
+  .ask-btn{flex-shrink:0; border:1px solid hsl(var(--border)); border-radius:6px; padding:3px 8px; background:transparent;
+    color:hsl(var(--muted-foreground)); cursor:pointer; font:11px/1.4 'Inter',system-ui,sans-serif; opacity:.55;
+    transition:opacity .12s, color .12s, border-color .12s, background .12s;}
+  .row:hover .ask-btn,.digest li:hover .ask-btn,.ask-btn:focus-visible{opacity:1;}
+  .ask-btn:hover{color:hsl(var(--foreground)); border-color:hsl(var(--primary)/.55); background:hsl(var(--primary)/.10);}
+  .ask-btn:focus-visible{outline:2px solid hsl(var(--primary)); outline-offset:2px;}
+  .ask-btn:disabled{cursor:default; opacity:.5;}
+  .row .ractions{flex-shrink:0; display:flex; align-items:center; gap:6px;}
+  .assistant-focus{display:flex; align-items:flex-start; gap:8px; margin:0 0 8px; padding:8px 10px;
+    border:1px solid hsl(27 90% 52%/.36); border-radius:8px; background:hsl(27 90% 52%/.09); font-size:11px; line-height:1.45;}
+  .assistant-focus[hidden]{display:none;}
+  .assistant-focus-text{flex:1; min-width:0;}
+  .assistant-focus-label{display:block; color:hsl(var(--muted-foreground)); font-size:10px; margin-bottom:2px;}
+  .assistant-focus-title{display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .assistant-focus-clear{flex:0 0 auto; width:22px; height:22px; padding:0; border:0; border-radius:5px; background:transparent;
+    color:hsl(var(--muted-foreground)); cursor:pointer; display:grid; place-items:center;}
+  .assistant-focus-clear:hover{color:hsl(var(--foreground)); background:hsl(var(--muted));}
+  .assistant-focus-clear svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+  .row .ren{margin-top:3px; font-size:11.5px; line-height:1.35; color:hsl(var(--muted-foreground));
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.8;}
+  .rsub{display:inline-block;margin-top:5px;padding:2px 6px;border:1px solid hsl(var(--border));border-radius:5px;color:hsl(var(--muted-foreground));font-size:10px;line-height:1.2;}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
+  }
+  @media (max-width:1100px){
+    .workbench{grid-template-columns:minmax(190px,220px) minmax(0,1fr);padding-left:16px;padding-right:16px;}
+    .workbench-side{grid-column:1 / -1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}
+    .side-alert-panel{min-height:260px;}
+    .app.assistant-open .assistant{position:fixed;inset:0 0 0 auto;z-index:31;width:min(94vw,var(--assistant-w));height:100dvh;
+      box-shadow:-18px 0 50px rgba(0,0,0,.45);}
+    .app.assistant-open .assistant-scrim{display:block;position:fixed;inset:0;z-index:30;border:0;
+      background:rgba(0,0,0,.52);backdrop-filter:blur(2px);cursor:pointer;}
+    .assistant-resizer{display:none;}
+  }
+  @media (max-width:720px){
+    body{overflow-x:hidden;}
+    .app{height:auto;min-height:100dvh;overflow:visible;display:block;}
+    .sidebar{width:100%;border-right:0;border-bottom:1px solid hsl(var(--border));}
+    .brand{padding:14px 16px;}
+    .nav{display:flex;align-items:center;gap:6px;overflow-x:auto;flex:none;padding:8px 12px 10px;}
+    .nav-label{position:static;flex:0 0 auto;padding:8px 4px;font-size:9px;background:transparent;backdrop-filter:none;}
+    .nav-item{flex:0 0 auto;min-height:40px;padding:9px 12px;}
+    .nav-item .nm{font-size:13px;}
+    .foot{padding:10px 16px;}
+    .nav-views{flex-direction:row;align-items:center;padding:8px 12px 6px;border-bottom:0;}
+    .nav-views .nav-item{flex:0 0 auto;min-height:40px;}
+    .main{min-width:0;overflow:visible;}
+    .head{padding:18px 16px 14px;}
+    .head h1{font-size:20px;}
+    .head .sub{line-height:1.7;}
+    .list{padding:12px 12px 40px;}
+    .workbench{padding:12px 12px 40px;grid-template-columns:1fr;}
+    .workbench-side{grid-column:auto;display:flex;}
+    .chart-panel{min-height:0;}
+    .chart-viewport{height:54vh;min-height:320px;}
+    .watchlist-scroll{max-height:none;}
+    .row .ractions{align-self:flex-start;}
+    .digest{margin:12px 12px 2px;padding:14px 14px 13px;border-radius:12px;}
+    .digest li{font-size:14px;}
+    .row{align-items:flex-start;gap:10px;padding:11px 12px;}
+    .row .rmeta{flex-direction:column;align-items:flex-end;gap:5px;}
+    .row .rsrc{max-width:96px;}
+    .row .rtm{min-width:auto;font-size:10px;}
+  }
+  @media (max-width:430px){
+    .head .ttl{gap:9px;}
+    .head .bdg{width:26px;height:26px;font-size:13px;}
+    .head h1{font-size:18px;}
+    .row{gap:8px;padding:10px;}
+    .row .rt{font-size:14px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .row .rs,.row .ren{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .row .rmeta{max-width:84px;}
+    .row .rsrc{max-width:84px;}
+  }
+</style>
+</head>
+<body>
+<div class="galaxy-layer" id="galaxyLayer" aria-hidden="true"></div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo">▲</span>
+      <div class="bt">投资资讯<br><small>Investment News</small></div>
+      <button class="refresh" id="refreshBtn" title="刷新:重新抓取 + AI 要点 + 翻译"><span class="ri">⟳</span></button>
+      <button class="assistant-toggle" id="assistantToggle" title="打开 / 收起 AI 个人咨询助手"
+              aria-label="打开 AI 个人咨询助手" aria-expanded="false" aria-controls="assistant">
+        <span class="assistant-ai-glyph" aria-hidden="true">AI</span>
+      </button>
+      <span id="refreshStatus" aria-live="polite" hidden></span>
+    </div>
+    <div class="nav-views">
+      <div class="nav-label">视图</div>
+      <div class="nav-item" id="viewNews" data-view="news" role="button" tabindex="0" aria-label="切换到资讯看板">
+        <span class="dot" style="background:#ff5a1f"></span><span class="nm">资讯看板</span>
+      </div>
+      <div class="nav-item" id="viewWorkbench" data-view="workbench" role="button" tabindex="0" aria-label="切换到行情工作台">
+        <span class="dot" style="background:#38bdf8"></span><span class="nm">行情工作台</span>
+        <span class="nav-badge" id="alertBadge" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="nav" id="nav"><div class="nav-label">行业 / SW 一级</div></div>
+    <div class="foot" id="foot"></div>
+  </aside>
+  <main class="main">
+    <div class="head" id="head"></div>
+    <div id="board"></div>
+    <section class="workbench" id="workbench" hidden>
+      <aside class="workbench-watch">
+        <section class="research-panel">
+          <div class="watch-panel-head"><strong>自选行情</strong><small id="watchCount">0 只</small><button class="research-refresh" id="researchRefresh" type="button">刷新</button></div>
+          <form class="watch-search" id="watchForm"><input id="watchSymbol" maxlength="20" placeholder="代码或品种" aria-label="添加自选代码" required><button class="research-action" type="submit">添加</button></form>
+          <div class="watchlist-scroll"><div class="research-list" id="watchList"><div class="research-empty">还没有自选行情。</div></div></div>
+        </section>
+        <button class="research-refresh" id="researchCompare" type="button">同行比较</button>
+      </aside>
+      <section class="research-panel chart-panel" id="chartPanel" aria-label="行情图表">
+        <div class="chart-top">
+          <div class="chart-instrument"><strong id="chartName">选择一只自选股</strong><small id="chartSymbol">—</small></div>
+          <div class="chart-quote" id="chartQuote"><strong id="chartPrice">—</strong><span id="chartChange">等待行情</span></div>
+        </div>
+        <div class="chart-tools">
+          <div class="chart-tabs" role="tablist" aria-label="图表周期">
+            <button class="chart-tab active" type="button" data-chart-mode="intraday" role="tab" aria-selected="true">分时</button>
+            <button class="chart-tab" type="button" data-chart-mode="day" role="tab" aria-selected="false">日K</button>
+            <button class="chart-tab" type="button" data-chart-mode="week" role="tab" aria-selected="false">周K</button>
+          </div>
+          <div class="chart-ranges" role="group" aria-label="时间范围">
+            <button class="chart-range active" type="button" data-chart-range="1D">1日</button>
+            <button class="chart-range" type="button" data-chart-range="5D">5日</button>
+            <button class="chart-range" type="button" data-chart-range="1M">1月</button>
+            <button class="chart-range" type="button" data-chart-range="6M">6月</button>
+            <button class="chart-range" type="button" data-chart-range="1Y">1年</button>
+          </div>
+          <span class="chart-range-label" id="chartRangeLabel">拖动查看 · 滚轮缩放</span>
+        </div>
+        <div class="chart-viewport" id="chartViewport">
+          <svg id="marketChart" role="img" aria-label="行情图表" viewBox="0 0 1000 520" preserveAspectRatio="none"></svg>
+          <div class="chart-empty" id="chartEmpty">添加或选择自选股后加载图表</div>
+          <div class="chart-tooltip" id="chartTooltip"></div>
+          <div class="chart-loading" id="chartLoading" hidden>加载行情中…</div>
+        </div>
+        <div class="chart-legend" id="chartLegend"><span><i style="background:#f59e0b"></i>价格</span><span><i style="background:#38bdf8"></i>MA20</span><span><i style="background:#64748b"></i>成交量</span></div>
+        <div class="indicator-tools" role="group" aria-label="技术指标"><button class="indicator-toggle active" type="button" data-indicator="ma">MA20</button><button class="indicator-toggle" type="button" data-indicator="boll">布林带</button><button class="indicator-toggle" type="button" data-indicator="macd">MACD</button><button class="indicator-toggle active" type="button" data-indicator="volume">成交量</button><button class="indicator-toggle" type="button" data-indicator="rsi">RSI14</button><button class="indicator-toggle" type="button" data-indicator="volumeRatio">量比</button><button class="indicator-toggle" type="button" data-indicator="kdj">KDJ</button></div>
+        <div class="chart-footnote" id="chartFootnote">数据仅供参考，非投资建议。分时数据为 5 分钟线，日K/周K来自历史收盘数据。</div>
+      </section>
+      <aside class="workbench-side">
+        <section class="quote-panel" id="quotePanel">
+          <h2>行情摘要</h2>
+          <div class="quote-grid">
+            <div class="quote-cell"><span>今开</span><strong id="quoteOpen">—</strong></div><div class="quote-cell"><span>最高</span><strong id="quoteHigh">—</strong></div>
+            <div class="quote-cell"><span>最低</span><strong id="quoteLow">—</strong></div><div class="quote-cell"><span>昨收</span><strong id="quotePrev">—</strong></div>
+            <div class="quote-cell"><span>成交量</span><strong id="quoteVolume">—</strong></div><div class="quote-cell"><span>成交额</span><strong id="quoteAmount">—</strong></div>
+            <div class="quote-cell"><span>RSI14</span><strong id="quoteRsi">—</strong></div><div class="quote-cell"><span>量比</span><strong id="quoteVolumeRatio">—</strong></div>
+            <div class="quote-cell"><span>MA20</span><strong id="quoteMa20">—</strong></div><div class="quote-cell"><span>MACD</span><strong id="quoteMacd">—</strong></div>
+          </div>
+          <div class="quote-source" id="quoteSource">等待选择行情标的</div>
+        </section>
+        <section class="research-panel side-alert-panel">
+          <div class="research-head"><strong>价格提醒</strong></div>
+          <form class="research-form" id="alertForm"><input id="alertSymbol" maxlength="20" placeholder="代码" required><select id="alertCondition" aria-label="提醒条件"><option value="below">跌破</option><option value="above">突破</option></select><input id="alertThreshold" type="number" step="0.01" placeholder="阈值" required aria-label="提醒阈值"><button class="research-action" type="submit">设置</button></form>
+          <div class="research-status" id="researchStatus" aria-live="polite"></div>
+          <div class="research-list" id="alertList"><div class="research-empty">暂无价格提醒。</div></div>
+        </section>
+      </aside>
+      <div class="research-panel research-panel-wide" id="researchResultPanel" hidden>
+        <div class="research-head"><strong>同行比较</strong><button class="research-refresh" id="researchResultClose" type="button">关闭</button></div>
+        <div class="research-result" id="researchResult"></div>
+      </div>
+      <section class="research-panel research-panel-wide data-query-panel" id="dataQueryPanel">
+        <div class="research-head data-query-head"><strong>投研数据查询</strong><small>按行业、来源和时间统计本地资讯快照；实时价格与财务问题请直接询问 AI 助手。</small></div>
+        <form class="data-query-form" id="dataQueryForm">
+          <textarea id="dataQueryInput" maxlength="500" aria-label="投研数据查询" placeholder="例如：统计各行业资讯数量；哪些来源的资讯最多？" required></textarea>
+          <button class="research-action" id="dataQuerySubmit" type="submit">查询</button>
+        </form>
+        <div class="data-query-presets" aria-label="常用投研查询">
+          <button type="button" data-data-query="资讯总量是多少">资讯总量</button>
+          <button type="button" data-data-query="统计各行业资讯数量">行业分布</button>
+          <button type="button" data-data-query="哪些来源的资讯最多？">来源排行</button>
+          <button type="button" data-data-query="统计最近7天每天的资讯数量">近7日趋势</button>
+          <button type="button" data-data-query="列出最新资讯明细">最新资讯</button>
+          <button type="button" data-data-query="列出 AI / 大模型 的资讯明细">AI 板块明细</button>
+        </div>
+        <div class="research-status" id="dataQueryStatus" aria-live="polite"></div>
+        <div class="research-result" id="dataQueryResult" hidden></div>
+        <details class="data-query-trace" id="dataQueryTrace" hidden>
+          <summary>查看 Schema 与 SQL 执行轨迹</summary>
+          <pre id="dataQueryTraceContent"></pre>
+        </details>
+      </section>
+    </section>
+  </main>
+  <button class="assistant-scrim" id="assistantScrim" type="button" tabindex="-1" aria-label="关闭助手"></button>
+  <aside class="assistant" id="assistant" aria-label="AI 个人咨询助手">
+    <button class="assistant-resizer" id="assistantResizer" type="button" aria-label="拖动调整助手宽度"
+            title="拖动调整宽度，方向键微调，双击复位"></button>
+    <div class="assistant-head">
+      <span class="assistant-mark" aria-hidden="true">AI</span>
+      <div class="assistant-title"><strong>个人咨询助手</strong><small>基于当前资讯与我的记忆</small></div>
+      <div class="assistant-head-actions">
+        <button class="assistant-memory-btn" id="memoryBtn" title="查看和管理我的记忆">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5h12v15H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span>记忆</span>
+        </button>
+        <button class="assistant-close-btn" id="assistantClose" title="收起助手" aria-label="收起助手">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="assistant-context" id="assistantContext">当前范围：<b>全部行业</b></div>
+    <div class="assistant-messages" id="assistantMessages">
+      <div class="assistant-welcome" id="assistantWelcome">
+        <strong>从资讯里找到你真正关心的线索。</strong>
+        <p>可以问我某个行业的变化、相关公司动态，或根据你的记忆找文章。回答只做资讯整理，不构成投资建议。</p>
+        <div class="assistant-prompts" id="assistantPrompts"></div>
+      </div>
+    </div>
+    <form class="assistant-composer" id="assistantForm">
+      <div class="assistant-focus" id="assistantFocus" hidden>
+        <span class="assistant-focus-text">
+          <span class="assistant-focus-label">正在追问这条</span>
+          <span class="assistant-focus-title" id="assistantFocusTitle"></span>
+        </span>
+        <button class="assistant-focus-clear" id="assistantFocusClear" type="button" title="取消追问这条" aria-label="取消追问这条">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <label for="assistantInput">向助手提问</label>
+      <div class="assistant-compose-row">
+        <textarea class="assistant-input" id="assistantInput" rows="1" maxlength="1000" placeholder="例如：最近 AI 算力链有什么变化？"></textarea>
+        <button class="assistant-send" id="assistantSend" type="submit" title="发送问题" aria-label="发送问题">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 16 8-16 8 3-8-3-8Z"/><path d="M7 12h13"/></svg>
+        </button>
+      </div>
+      <div class="assistant-error" id="assistantError" role="alert" hidden></div>
+    </form>
+  </aside>
+</div>
+<div class="toast-stack" id="toastStack" role="status" aria-live="polite"></div>
+<dialog class="memory-dialog" id="memoryDialog" aria-labelledby="memoryDialogTitle">
+  <div class="memory-dialog-head">
+    <strong id="memoryDialogTitle">我的记忆</strong>
+    <button class="assistant-close-btn" id="memoryClose" type="button" title="关闭记忆" aria-label="关闭记忆">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+    </button>
+  </div>
+  <div class="memory-dialog-body">
+    <div class="memory-list" id="memoryList"></div>
+    <form class="memory-form" id="memoryForm">
+      <div class="memory-form-title">新增一条记忆</div>
+      <label class="memory-field"><span>类型</span><select id="memoryType"><option value="watch_topic">关注主题</option><option value="preference">偏好</option><option value="conversation">对话摘要</option></select></label>
+      <label class="memory-field"><span>标题</span><input id="memoryTitle" maxlength="120" required placeholder="例如：关注 AI 算力链"></label>
+      <label class="memory-field"><span>内容</span><textarea id="memoryContent" maxlength="500" required placeholder="例如：希望优先看到芯片、服务器和数据中心相关动态"></textarea></label>
+      <div class="memory-form-foot"><button class="memory-submit" type="submit">保存记忆</button><span class="memory-form-status" id="memoryStatus" aria-live="polite"></span></div>
+    </form>
+  </div>
+</dialog>
+<script type="module" src="./galaxy-background.js"></script>
+<script>
+function boot(){
+  var D = window.DATA || {industries:[]};
+  var sourceIndustries = (D.industries || []).map(function(ind){
+    return {
+      key: ind.key,
+      name: ind.name,
+      accent: ind.accent || '#94a3b8',
+      total: Number(ind.total || 0),
+      items: Array.isArray(ind.items) ? ind.items : [],
+      points: Array.isArray(ind.points) ? ind.points : []
+    };
+  });
+  var SW_INDUSTRIES = [
+    {key:'sw_agriculture',name:'农林牧渔',accent:'#65a30d'},
+    {key:'sw_chemical',name:'基础化工',accent:'#14b8a6'},
+    {key:'sw_steel',name:'钢铁',accent:'#94a3b8'},
+    {key:'sw_nonferrous',name:'有色金属',accent:'#f59e0b'},
+    {key:'sw_electronics',name:'电子',accent:'#22d3ee'},
+    {key:'sw_home_appliance',name:'家用电器',accent:'#60a5fa'},
+    {key:'sw_food_beverage',name:'食品饮料',accent:'#fb7185'},
+    {key:'sw_textile',name:'纺织服饰',accent:'#c084fc'},
+    {key:'sw_light_manufacturing',name:'轻工制造',accent:'#a3e635'},
+    {key:'sw_medicine',name:'医药生物',accent:'#34d399'},
+    {key:'sw_utility',name:'公用事业',accent:'#2dd4bf'},
+    {key:'sw_transportation',name:'交通运输',accent:'#38bdf8'},
+    {key:'sw_real_estate',name:'房地产',accent:'#f97316'},
+    {key:'sw_commerce',name:'商贸零售',accent:'#facc15'},
+    {key:'sw_social_service',name:'社会服务',accent:'#f472b6'},
+    {key:'sw_conglomerates',name:'综合',accent:'#a78bfa'},
+    {key:'sw_building_materials',name:'建筑材料',accent:'#fb923c'},
+    {key:'sw_construction',name:'建筑装饰',accent:'#eab308'},
+    {key:'sw_power_equipment',name:'电力设备',accent:'#10b981'},
+    {key:'sw_defense',name:'国防军工',accent:'#818cf8'},
+    {key:'sw_computer',name:'计算机',accent:'#3b82f6'},
+    {key:'sw_media',name:'传媒',accent:'#ec4899'},
+    {key:'sw_telecom',name:'通信',accent:'#06b6d4'},
+    {key:'sw_bank',name:'银行',accent:'#0ea5e9'},
+    {key:'sw_nonbank_finance',name:'非银金融',accent:'#8b5cf6'},
+    {key:'sw_auto',name:'汽车',accent:'#ef4444'},
+    {key:'sw_machinery',name:'机械设备',accent:'#64748b'},
+    {key:'sw_coal',name:'煤炭',accent:'#78716c'},
+    {key:'sw_petrochemical',name:'石油石化',accent:'#dc2626'},
+    {key:'sw_environmental',name:'环保',accent:'#22c55e'},
+    {key:'sw_beauty',name:'美容护理',accent:'#f0abfc'}
+  ];
+  var SOURCE_TO_SW = {
+    ai:['sw_computer','sw_media','sw_electronics'],
+    semi:['sw_electronics'],
+    robot:['sw_machinery','sw_computer'],
+    auto:['sw_auto','sw_power_equipment'],
+    energy:['sw_power_equipment','sw_utility','sw_coal','sw_petrochemical','sw_environmental'],
+    bio:['sw_medicine'],
+    space:['sw_defense','sw_machinery'],
+    security:['sw_computer','sw_telecom'],
+    tech:['sw_computer','sw_media','sw_telecom'],
+    consumer:['sw_electronics','sw_home_appliance'],
+    macro:['sw_bank','sw_nonbank_finance','sw_real_estate','sw_construction','sw_building_materials','sw_transportation','sw_food_beverage','sw_agriculture','sw_chemical','sw_nonferrous','sw_steel','sw_commerce','sw_social_service','sw_conglomerates','sw_light_manufacturing','sw_textile','sw_beauty'],
+    science:['sw_chemical','sw_medicine','sw_agriculture','sw_environmental']
+  };
+  function cloneItemForView(item, source, sw){
+    var copy = {};
+    Object.keys(item || {}).forEach(function(key){ copy[key] = item[key]; });
+    copy.source_industry_key = source.key;
+    copy.source_industry_name = source.name;
+    copy.source_industry_accent = source.accent;
+    copy.subindustry_name = source.name;
+    if(sw){
+      copy.sw_industry_key = sw.key;
+      copy.sw_industry_name = sw.name;
+    }
+    return copy;
+  }
+  function mergeUnique(items){
+    var seen = {}, result = [];
+    items.forEach(function(item){
+      var key = (item.url || item.title || item.zh || '') + '|' + (item.source || '');
+      if(!key.trim() || seen[key]) return;
+      seen[key] = true;
+      result.push(item);
+    });
+    return result.sort(function(a,b){return (Number(b.ts)||0)-(Number(a.ts)||0);});
+  }
+  function buildPoints(sources, limit){
+    var pts = [];
+    sources.forEach(function(source){
+      source.points.forEach(function(point){
+        if(pts.length >= limit) return;
+        if(typeof point === 'string') pts.push(source.name + ': ' + point);
+        else pts.push({t: source.name + ': ' + (point.t || ''), url: point.url || ''});
+      });
+    });
+    return pts;
+  }
+  function buildIndustryViews(sources){
+    var allItems = [];
+    sources.forEach(function(source){
+      source.items.forEach(function(item){ allItems.push(cloneItemForView(item, source, null)); });
+    });
+    var allItemsUnique = mergeUnique(allItems);
+    var allView = {
+      key:'all', name:'全部行业', accent:'#ff5a1f', total:sources.length,
+      sourceCount:sources.length, sourceKeys:sources.map(function(source){return source.key;}),
+      item_count:allItemsUnique.length, items:allItemsUnique, points:buildPoints(sources, 8)
+    };
+    var views = [allView];
+    SW_INDUSTRIES.forEach(function(sw){
+      var mappedSources = sources.filter(function(source){ return (SOURCE_TO_SW[source.key] || []).indexOf(sw.key) >= 0; });
+      var items = [];
+      mappedSources.forEach(function(source){
+        source.items.forEach(function(item){ items.push(cloneItemForView(item, source, sw)); });
+      });
+      items = mergeUnique(items);
+      views.push({
+        key: sw.key, name: sw.name, accent: sw.accent, total: mappedSources.length,
+        sourceCount: mappedSources.length, sourceKeys: mappedSources.map(function(source){return source.key;}),
+        item_count: items.length, items: items, points: buildPoints(mappedSources, 5)
+      });
+    });
+    return views;
+  }
+  function assistantIndustryKeyFor(view){
+    if(!view || !Array.isArray(view.sourceKeys) || view.sourceKeys.length !== 1) return null;
+    return view.sourceKeys[0];
+  }
+  var inds = buildIndustryViews(sourceIndustries);
+  var nav = document.getElementById('nav');
+  var active = 'all';
+  var visibleItems = [];   // 当前主区列表（已排序），供“问助手 / 收藏”按索引取用
+  var visiblePoints = [];  // 当前行业今日要点
+
+  function hexA(hex, a){ // #rrggbb + alpha(0-1) -> rgba
+    var n = hex.replace('#','');
+    var r=parseInt(n.substr(0,2),16), g=parseInt(n.substr(2,2),16), b=parseInt(n.substr(4,2),16);
+    return 'rgba('+r+','+g+','+b+','+a+')';
+  }
+
+  // 侧边栏
+  inds.forEach(function(ind){
+    var el = document.createElement('div');
+    el.className = 'nav-item'; el.dataset.key = ind.key;
+    el.setAttribute('role','button'); el.setAttribute('tabindex','0');
+    el.setAttribute('aria-label','切换到 '+ind.name);
+    el.innerHTML = '<span class="dot" style="background:'+ind.accent+'"></span>'
+      + '<span class="nm">'+esc(ind.name)+'</span>'
+      + '<span class="cnt">'+(ind.item_count || ind.items.length || 0)+'</span>';
+    el.onclick = function(){ setActive(ind.key); };
+    el.onkeydown = function(event){ if(event.key==='Enter' || event.key===' '){ event.preventDefault(); setActive(ind.key); } };
+    nav.appendChild(el);
+  });
+
+  document.getElementById('foot').innerHTML =
+    '<b style="color:hsl(var(--foreground))">'+(D.stats?D.stats.total_sources:'–')+'</b> 个源 · '
+    + (inds.length - 1) + ' 个申万一级行业<br><span style="opacity:.72">' + sourceIndustries.length + ' 个主题赛道已映射</span>'
+    + '<br><span style="opacity:.5;font-size:10px">仅资讯，非投资建议 · Not financial advice</span>';
+
+  function setActive(key){
+    active = key;
+    var ind = inds.find(function(x){return x.key===key;});
+    if(!ind){
+      document.getElementById('board').innerHTML='<div class="empty">该行业暂未配置数据。</div>';
+      return;
+    }
+    // 侧边栏高亮
+    document.querySelectorAll('.nav-item').forEach(function(n){
+      var on = n.dataset.key===key; n.classList.toggle('active', on);
+      n.style.background = on ? 'linear-gradient(0deg,'+hexA(ind.accent,0.14)+','+hexA(ind.accent,0.14)+'), rgba(39,50,66,.82)' : '';
+      n.style.borderColor = on ? hexA(ind.accent,0.36) : '';
+      n.querySelector('.nm').style.color = on ? ind.accent : '';
+    });
+    document.getElementById('assistantContext').innerHTML = '当前范围：<b>'+esc(ind.name)+'</b>';
+    renderMain(ind);
+    renderQuickPrompts(ind);
+  }
+
+  // ---- 主区视图切换：资讯看板 / 行情工作台 ----
+  var currentView = 'news';
+  function setView(view){
+    currentView = view === 'workbench' ? 'workbench' : 'news';
+    var isWorkbench = currentView === 'workbench';
+    document.getElementById('board').hidden = isWorkbench;
+    document.getElementById('workbench').hidden = !isWorkbench;
+    nav.hidden = isWorkbench;
+    ['viewNews','viewWorkbench'].forEach(function(id){
+      var el = document.getElementById(id);
+      var on = (id === 'viewWorkbench') === isWorkbench;
+      el.classList.toggle('active', on);
+      el.setAttribute('aria-current', on ? 'page' : 'false');
+    });
+    if(isWorkbench){
+      document.getElementById('head').innerHTML =
+        '<div class="ttl"><span class="bdg" style="background:rgba(56,189,248,.14);color:#38bdf8">◈</span><h1>行情工作台</h1></div>'
+        + '<div class="sub">自选行情、K线、财务快照与价格提醒 · 数据仅供参考，非投资建议</div>';
+      loadWatchlist(); loadAlerts(); checkAlerts();
+    }else{
+      var ind = inds.find(function(x){return x.key===active;});
+      if(ind) renderMain(ind);
+    }
+  }
+
+  function renderMain(ind){
+    var ac = ind.accent;
+    document.getElementById('head').innerHTML =
+      '<div class="ttl"><span class="bdg" style="background:'+hexA(ac,0.14)+';color:'+ac+'">●</span>'
+      + '<h1>'+ind.name+'</h1></div>'
+      + '<div class="sub">' + (ind.key==='all' ? '覆盖 <b>'+ind.sourceCount+'</b> 个主题赛道' : '映射 <b>'+ind.sourceCount+'</b> 个主题赛道') + ' · 本栏 <b>'+ind.items.length+'</b> 条'
+      + '<span class="pill" style="background:'+hexA(ac,0.12)+';color:'+ac+'">最近 '+(D.recent_days||120)+' 天</span>'
+      + ' · 更新 '+(D.generated_at||'')+' · 本地抓取';
+    var board = document.getElementById('board');
+    if(!ind.items.length){ board.className=''; board.innerHTML = '<div class="empty">该行业暂未抓到条目。</div>'; return; }
+
+    // AI 今日要点卡
+    var pts = ind.points || [];
+    var digest = pts.length ? (
+      '<div class="digest" style="border-color:'+hexA(ac,0.30)+';background:linear-gradient(135deg,'+hexA(ac,0.08)+',rgba(43,58,76,.84))">'
+      + '<div class="dh" style="color:'+ac+'">✦ 行业今日要点</div>'
+      + '<ul>' + pts.map(function(p, pointIndex){
+          var t = (typeof p === 'string') ? p : (p.t||'');
+          var url = (p && typeof p === 'object') ? (p.url||'') : '';
+          var su = safeUrl(url);
+          var jump = su ? '<a class="dj" href="'+su+'" target="_blank" rel="noopener" title="跳转原文" style="color:'+ac+'">↗</a>' : '';
+          return '<li><span class="b" style="background:'+ac+'"></span><span class="pt">'+esc(t)+'</span>'
+            + '<button class="ask-btn" type="button" data-ask="point" data-index="'+pointIndex+'">问助手</button>'
+            + jump + '</li>';
+        }).join('') + '</ul></div>'
+    ) : '';
+
+    // 新闻行(中文标题 + 原文小字)，统一按发布时间倒序并显示相对新鲜度。
+    function shanghaiTime(ts, fallback){
+      var value=Number(ts||0);
+      if(!value) return fallback||'';
+      try{
+        var parts=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(value*1000));
+        var map={}; parts.forEach(function(part){map[part.type]=part.value;});
+        return map.month+'-'+map.day+' '+map.hour+':'+map.minute;
+      }catch(e){return fallback||'';}
+    }
+    function futureTimestamp(ts){
+      var value=Number(ts||0); return value>0 && value>Date.now()/1000;
+    }
+    function relativeAge(ts){
+      var value=Number(ts||0); if(!value) return '';
+      var age=Math.floor(Date.now()/1000-value);
+      if(age < 0) return '时间待校准';
+      age=Math.max(0,age);
+      if(age<60) return '刚刚';
+      if(age<3600) return Math.floor(age/60)+'分钟前';
+      if(age<86400) return Math.floor(age/3600)+'小时前';
+      return Math.floor(age/86400)+'天前';
+    }
+    var sortedItems = ind.items.slice().filter(function(item){return !futureTimestamp(item.ts);}).sort(function(a,b){return (Number(b.ts)||0)-(Number(a.ts)||0);});
+    visibleItems = sortedItems;
+    visiblePoints = pts;
+    var rows = sortedItems.map(function(it, itemIndex){
+      var hasZh = it.zh && it.zh.trim();
+      var primary = esc(hasZh ? it.zh : it.title);
+      var secondary = hasZh ? esc(it.title) : esc(it.summary||'');
+      var su = safeUrl(it.url);
+      var link = su ? '<a class="rt" href="'+su+'" target="_blank" rel="noopener">'+primary+'</a>'
+                    : '<span class="rt">'+primary+'</span>';
+      return '<div class="row" onmouseover="this.style.borderColor=\''+hexA(ac,0.45)+'\'" onmouseout="this.style.borderColor=\'\'">'
+        + '<span class="rdot" style="background:'+ac+'"></span>'
+        + '<div class="rbody">' + link
+        + (secondary?'<div class="'+(hasZh?'ren':'rs')+'">'+secondary+'</div>':'')
+        + (it.subindustry_name?'<span class="rsub">'+esc(it.subindustry_name)+'</span>':'')
+        + '</div>'
+        + '<div class="ractions">'
+        +   '<button class="ask-btn" type="button" data-ask="item" data-index="'+itemIndex+'">问助手</button>'
+        +   '<button class="ask-btn" type="button" data-save="item" data-index="'+itemIndex+'">收藏</button>'
+        + '</div>'
+        + '<div class="rmeta">'
+        +   '<span class="rsrc" style="background:'+hexA(ac,0.12)+';color:'+ac+'">'+esc(it.source)+'</span>'
+        +   '<span class="rtm" title="发布时间 '+esc(shanghaiTime(it.ts,it.time)||'未知')+'">'+esc(relativeAge(it.ts)||shanghaiTime(it.ts,it.time)||'—')
+        +     (it.ts?'<small>'+esc(shanghaiTime(it.ts,it.time))+'</small>':'')+'</span>'
+        + '</div></div>';
+    }).join('');
+
+    board.className='';
+    board.innerHTML = digest + '<div class="list">' + rows + '</div>';
+    board.querySelectorAll('[data-ask]').forEach(function(button){
+      button.onclick = function(){
+        var index = Number(button.dataset.index);
+        if(button.dataset.ask === 'point') askAboutPoint(visiblePoints[index], ind);
+        else askAboutArticle(visibleItems[index], ind);
+      };
+    });
+    board.querySelectorAll('[data-save="item"]').forEach(function(button){
+      button.onclick = function(){ saveArticle(visibleItems[Number(button.dataset.index)], button); };
+    });
+  }
+  function esc(s){return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function markdownInline(text){
+    return esc(String(text||''))
+      .replace(/`([^`]+)`/g,'<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  }
+  function renderMarkdownInto(element, text){
+    var lines=String(text||'').replace(/\r/g,'').split('\n');
+    var html='';
+    for(var i=0;i<lines.length;i++){
+      var line=lines[i];
+      if(/^\|.*\|$/.test(line) && i+1<lines.length && /^\|?\s*:?-{3,}/.test(lines[i+1])){
+        var headers=line.split('|').slice(1,-1);
+        i++;
+        html+='<table><thead><tr>'+headers.map(function(cell){return '<th>'+markdownInline(cell.trim())+'</th>';}).join('')+'</tr></thead><tbody>';
+        while(i+1<lines.length && /^\|.*\|$/.test(lines[i+1])){
+          i++; var cells=lines[i].split('|').slice(1,-1);
+          html+='<tr>'+cells.map(function(cell){return '<td>'+markdownInline(cell.trim())+'</td>';}).join('')+'</tr>';
+        }
+        html+='</tbody></table>'; continue;
+      }
+      if(/^###\s+/.test(line)){ html+='<h3>'+markdownInline(line.replace(/^###\s+/,''))+'</h3>'; continue; }
+      if(!line.trim()){ continue; }
+      html+='<p>'+markdownInline(line)+'</p>';
+    }
+    element.classList.add('assistant-markdown');
+    element.innerHTML=html||'<p>暂无内容。</p>';
+  }
+  // 外链来自 RSS <link>(源方可控):只放行 http(s) 并转义,防属性逃逸 XSS 和 javascript: 伪协议
+  function safeUrl(u){
+    try{
+      var url=new URL((''+(u||'')).trim());
+      return (url.protocol==='http:' || url.protocol==='https:') ? esc(url.href) : '';
+    }catch(e){return '';}
+  }
+  function safeRawUrl(u){
+    try{
+      var url=new URL((''+(u||'')).trim());
+      return (url.protocol==='http:' || url.protocol==='https:') ? url.href : '';
+    }catch(e){return '';}
+  }
+
+  // 个人咨询助手
+  var assistant = document.getElementById('assistant');
+  var assistantMessages = document.getElementById('assistantMessages');
+  var assistantInput = document.getElementById('assistantInput');
+  var assistantSend = document.getElementById('assistantSend');
+  var assistantError = document.getElementById('assistantError');
+  var memoryDialog = document.getElementById('memoryDialog');
+  var memoryList = document.getElementById('memoryList');
+  var memoryStatus = document.getElementById('memoryStatus');
+  var assistantBusy = false;
+  var appEl = document.querySelector('.app');
+  var assistantToggle = document.getElementById('assistantToggle');
+  var focusContext = null; // 来自面板的“问助手”上下文
+
+  // ---- 抽屉开合 + 宽度记忆 ----
+  var ASSISTANT_MIN_W = 320, ASSISTANT_MAX_W = 720, ASSISTANT_DEFAULT_W = 400;
+  function applyAssistantWidth(width){
+    var value = Math.min(ASSISTANT_MAX_W, Math.max(ASSISTANT_MIN_W, Math.round(width)));
+    appEl.style.setProperty('--assistant-w', value+'px');
+    try{ localStorage.setItem('assistantWidth', String(value)); }catch(e){}
+    return value;
+  }
+  function storedAssistantWidth(){
+    try{ return Number(localStorage.getItem('assistantWidth')) || ASSISTANT_DEFAULT_W; }
+    catch(e){ return ASSISTANT_DEFAULT_W; }
+  }
+  applyAssistantWidth(storedAssistantWidth());
+  function openAssistant(){
+    appEl.classList.add('assistant-open');
+    assistantToggle.setAttribute('aria-expanded','true');
+    try{ localStorage.setItem('assistantOpen','1'); }catch(e){}
+    assistantInput.focus();
+  }
+  function closeAssistant(){
+    appEl.classList.remove('assistant-open');
+    assistantToggle.setAttribute('aria-expanded','false');
+    try{ localStorage.setItem('assistantOpen','0'); }catch(e){}
+    assistantToggle.focus();
+  }
+  function toggleAssistant(){
+    if(appEl.classList.contains('assistant-open')) closeAssistant(); else openAssistant();
+  }
+
+  // ---- 全局 toast（价格提醒等跨视图通知，不再写进聊天流） ----
+  function showToast(title, message){
+    var stack = document.getElementById('toastStack');
+    var toast = document.createElement('div'); toast.className='toast';
+    var body = document.createElement('div'); body.className='toast-body';
+    body.innerHTML = '<span class="toast-title">'+esc(title)+'</span>'+esc(message);
+    var close = document.createElement('button');
+    close.type='button'; close.className='toast-close'; close.title='关闭通知'; close.setAttribute('aria-label','关闭通知');
+    close.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>';
+    var timer=window.setTimeout(function(){toast.remove();},12000);
+    close.onclick=function(){window.clearTimeout(timer);toast.remove();};
+    toast.appendChild(body); toast.appendChild(close); stack.appendChild(toast);
+  }
+  function setAlertBadge(count){
+    var badge=document.getElementById('alertBadge');
+    badge.textContent = count>0 ? String(count) : '';
+    badge.classList.toggle('on', count>0);
+    badge.setAttribute('aria-label', count>0 ? count+' 条价格提醒已触发' : '');
+  }
+
+  // ---- 快捷问题按当前行业动态生成 ----
+  function renderQuickPrompts(ind){
+    var box=document.getElementById('assistantPrompts');
+    if(!box) return;
+    var name = ind.key==='all' ? '' : ind.name;
+    var prompts = name
+      ? [name+'最近有什么变化？', name+'有哪些值得注意的风险？', '找和我关注主题相关的'+name+'资讯']
+      : ['最近整体有什么变化？', '找和我关注主题相关的资讯', '今天有哪些值得注意的风险？'];
+    box.innerHTML='';
+    prompts.forEach(function(text){
+      var button=document.createElement('button');
+      button.type='button'; button.className='assistant-prompt'; button.textContent=text;
+      button.onclick=function(){ openAssistant(); sendAssistantMessage(text); };
+      box.appendChild(button);
+    });
+  }
+
+  // ---- 面板 → 助手：带结构化上下文追问 ----
+  function setFocusContext(context){
+    focusContext = context;
+    var box=document.getElementById('assistantFocus');
+    if(!context){ box.hidden=true; return; }
+    document.getElementById('assistantFocusTitle').textContent = context.title || '';
+    document.getElementById('assistantFocusTitle').title = context.title || '';
+    box.hidden=false;
+  }
+  function askAboutArticle(item, ind){
+    if(!item) return;
+    setFocusContext({
+      kind:'article',
+      title:(item.zh || item.title || '').trim(),
+      raw_title:item.title||'', source:item.source||'', url:item.url||'',
+      article_key:item.article_key||'', time:item.time||'',
+      industry_name:(ind && ind.name) || '', subindustry_name:item.subindustry_name||''
+    });
+    openAssistant();
+    assistantInput.placeholder='想问这条什么？留空则默认让我讲讲它的背景和影响';
+  }
+  function askAboutPoint(point, ind){
+    if(!point) return;
+    var text = typeof point === 'string' ? point : (point.t || '');
+    setFocusContext({
+      kind:'digest_point', title:text.trim(),
+      url:(point && typeof point === 'object' ? (point.url||'') : ''),
+      industry_name:(ind && ind.name) || ''
+    });
+    openAssistant();
+    assistantInput.placeholder='想问这条要点什么？留空则默认让我展开说说';
+  }
+
+  function assistantScroll(){ assistantMessages.scrollTop = assistantMessages.scrollHeight; }
+  function assistantStamp(){
+    return new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  }
+  function addMessage(role, text){
+    var wrap = document.createElement('div');
+    wrap.className = 'assistant-message '+role;
+    var bubble = document.createElement('div');
+    bubble.className = 'assistant-bubble';
+    if(role==='assistant') renderMarkdownInto(bubble,text); else bubble.textContent = text || '';
+    var time = document.createElement('span');
+    time.className = 'assistant-time';
+    time.textContent = assistantStamp();
+    wrap.appendChild(bubble); wrap.appendChild(time);
+    assistantMessages.appendChild(wrap); assistantScroll();
+    return wrap;
+  }
+  function addStreamingMessage(){
+    var wrap = document.createElement('div');
+    wrap.className = 'assistant-message assistant';
+    var bubble = document.createElement('div');
+    bubble.className = 'assistant-bubble';
+    var time = document.createElement('span');
+    time.className = 'assistant-time';
+    time.textContent = assistantStamp();
+    wrap.appendChild(bubble); wrap.appendChild(time);
+    assistantMessages.appendChild(wrap); assistantScroll();
+    return {wrap:wrap,bubble:bubble};
+  }
+  function addTyping(){
+    var wrap = document.createElement('div');
+    wrap.className = 'assistant-message assistant'; wrap.id = 'assistantTyping';
+    wrap.innerHTML = '<div class="assistant-bubble assistant-typing"><i></i><i></i><i></i></div>';
+    assistantMessages.appendChild(wrap); assistantScroll();
+    return wrap;
+  }
+  function makeDismissButton(label){
+    var button=document.createElement('button');
+    button.type='button'; button.className='assistant-dismiss'; button.title=label; button.setAttribute('aria-label',label);
+    button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>';
+    return button;
+  }
+  function removeSuggestion(item, group){
+    item.remove();
+    if(!group.children.length) group.remove();
+    assistantScroll();
+  }
+  function saveArticle(article, btn){
+    btn.disabled=true; btn.textContent='收藏中…';
+    fetch('/api/articles/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      article_key:article.article_key||'',url:article.url||'',
+      title:article.title||article.zh||'',source:article.source||'',
+      industry_key:article.industry_key||'',tags:[]
+    })}).then(function(r){return r.json().then(function(d){return {ok:r.ok&&d.ok,data:d};});})
+      .then(function(res){if(!res.ok) throw new Error(res.data.error||'收藏失败'); btn.textContent='已收藏 ✓';})
+      .catch(function(err){btn.disabled=false; btn.textContent='收藏'; btn.title=err.message;});
+  }
+  function addArticles(articles){
+    if(!Array.isArray(articles) || !articles.length) return;
+    var group = document.createElement('div'); group.className = 'assistant-articles';
+    articles.slice(0,5).forEach(function(article){
+      var rawUrl = safeRawUrl(article.url);
+      var card = document.createElement('div');
+      card.className = 'assistant-article';
+      var titleText = article.zh || article.title || '未命名资讯';
+      var titleHtml = rawUrl
+        ? '<a class="assistant-article-title" href="'+esc(rawUrl)+'" target="_blank" rel="noopener">'+esc(titleText)+'</a>'
+        : '<div class="assistant-article-title">'+esc(titleText)+'</div>';
+      card.innerHTML = titleHtml
+        + '<div class="assistant-article-meta"><span>'+esc(article.source||'未知来源')+'</span><span>'+esc(article.time||'')+'</span></div>'
+        + (article.reason ? '<div class="assistant-article-reason">'+esc(article.reason)+'</div>' : '');
+      var dismissBtn=makeDismissButton('关闭这条资讯'); dismissBtn.classList.add('assistant-article-dismiss');
+      dismissBtn.onclick=function(){removeSuggestion(card,group);};
+      card.appendChild(dismissBtn);
+      var actions = document.createElement('div'); actions.className='assistant-article-actions';
+      if(rawUrl){
+        var openBtn=document.createElement('a'); openBtn.className='assistant-article-open';
+        openBtn.href=rawUrl; openBtn.target='_blank'; openBtn.rel='noopener'; openBtn.textContent='打开原文';
+        actions.appendChild(openBtn);
+      }
+      var saveBtn=document.createElement('button'); saveBtn.type='button'; saveBtn.className='assistant-article-save';
+      saveBtn.textContent='收藏';
+      saveBtn.onclick=function(){ saveArticle(article,saveBtn); };
+      actions.appendChild(saveBtn); card.appendChild(actions);
+      group.appendChild(card);
+    });
+    assistantMessages.appendChild(group); assistantScroll();
+  }
+  function addMemorySuggestions(suggestions){
+    if(!Array.isArray(suggestions) || !suggestions.length) return;
+    var group = document.createElement('div'); group.className='assistant-memory-suggestions';
+    suggestions.slice(0,3).forEach(function(suggestion){
+      if(!suggestion || !suggestion.title || !suggestion.content) return;
+      var item = document.createElement('div'); item.className='assistant-memory-suggestion';
+      var saveButton = document.createElement('button'); saveButton.type='button'; saveButton.className='assistant-memory-save';
+      saveButton.textContent='保存：'+suggestion.title; saveButton.title=suggestion.content;
+      saveButton.onclick=function(){ saveSuggestedMemory(suggestion,saveButton); };
+      var dismissButton=makeDismissButton('不保存，关闭这条建议'); dismissButton.classList.add('assistant-memory-dismiss');
+      dismissButton.onclick=function(){removeSuggestion(item,group);};
+      item.appendChild(saveButton); item.appendChild(dismissButton); group.appendChild(item);
+    });
+    if(group.children.length){ assistantMessages.appendChild(group); assistantScroll(); }
+  }
+  function saveSuggestedMemory(suggestion, button){
+    button.disabled=true; button.textContent='保存中…';
+    fetch('/api/memory/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      memory_type:suggestion.type||'watch_topic', title:suggestion.title, content:suggestion.content, tags:suggestion.tags||[]
+    })}).then(function(response){return response.json().then(function(data){return {ok:response.ok && data.ok,data:data};});})
+      .then(function(result){ if(!result.ok) throw new Error(result.data.error||'保存失败'); button.textContent='已保存'; })
+      .catch(function(error){ button.disabled=false; button.textContent='重试保存'; button.title=error.message; });
+  }
+  function sendAssistantMessage(message){
+    message = (message || assistantInput.value || '').trim();
+    var sentFocus = focusContext;
+    if(!message && sentFocus){
+      message = sentFocus.kind==='digest_point'
+        ? '展开说说这条要点的背景和影响。'
+        : '讲讲这条资讯的背景、影响和需要继续跟踪的点。';
+    }
+    if(!message || assistantBusy) return;
+    assistantBusy=true; assistantSend.disabled=true; assistantInput.disabled=true; assistantError.hidden=true;
+    var welcome=document.getElementById('assistantWelcome'); if(welcome) welcome.remove();
+    if(sentFocus && sentFocus.title){
+      var quote=addMessage('user','【'+(sentFocus.kind==='digest_point'?'要点':'资讯')+'】'+sentFocus.title);
+      quote.classList.add('assistant-quoted');
+    }
+    addMessage('user',message); assistantInput.value='';
+    setFocusContext(null);
+    assistantInput.placeholder='例如：最近 AI 算力链有什么变化？';
+    var typing=addTyping();
+    var activeView = inds.find(function(x){return x.key===active;});
+    var currentIndustry = assistantIndustryKeyFor(activeView);
+    var streamMessage=null;
+    var streamBubble=null;
+    var marketReportText='';
+    var marketReportShown=false;
+    var streamRawText='';
+    var decoder=new TextDecoder('utf-8');
+    var buffer='';
+    var streamDone=false;
+    function handleEvent(block){
+      if(!block.trim()) return;
+      var eventName='message'; var dataLines=[];
+      block.split(/\r?\n/).forEach(function(line){
+        if(line.indexOf('event:')===0) eventName=line.slice(6).trim();
+        else if(line.indexOf('data:')===0) dataLines.push(line.slice(5).trim());
+      });
+      if(!dataLines.length) return;
+      var payload=JSON.parse(dataLines.join('\n'));
+      if(eventName==='market_report'){
+        marketReportText=payload.markdown||'';
+        if(marketReportText){
+          marketReportShown=true;
+          var reportMessage=addStreamingMessage();
+          renderMarkdownInto(reportMessage.bubble,marketReportText);
+        }
+      }else if(eventName==='token'){
+        // 行情报告已单独渲染过：终态分支会把同一份文本再作为 token 推一次，这里跳过整段重复。
+        if(marketReportShown && !streamRawText && (payload.text||'').trim()===marketReportText.trim()) return;
+        if(!streamMessage){
+          if(typing && typing.parentNode) typing.remove();
+          streamMessage=addStreamingMessage(); streamBubble=streamMessage.bubble;
+        }
+        streamRawText += payload.text||'';
+        renderMarkdownInto(streamBubble,streamRawText); assistantScroll();
+      }else if(eventName==='done'){
+        streamDone=true;
+        if(streamBubble) renderMarkdownInto(streamBubble,streamRawText);
+        addArticles(payload.articles); addMemorySuggestions(payload.memory_suggestions);
+      }else if(eventName==='error'){
+        throw new Error(payload.message||'助手暂时无法回答');
+      }
+    }
+    function readStream(reader){
+      return reader.read().then(function(result){
+        if(result.done){
+          buffer += decoder.decode();
+          if(buffer.trim()) handleEvent(buffer);
+          if(!streamDone && !streamMessage) addMessage('assistant','暂时没有可补充的内容。');
+          return;
+        }
+        buffer += decoder.decode(result.value,{stream:true});
+        var blocks=buffer.split(/\r?\n\r?\n/); buffer=blocks.pop()||'';
+        blocks.forEach(handleEvent);
+        return readStream(reader);
+      });
+    }
+    fetch('/api/assistant/chat/stream',{method:'POST',headers:{'Content-Type':'application/json','Accept':'text/event-stream'},body:JSON.stringify({message:message,industry_key:currentIndustry,focus:sentFocus||null})})
+      .then(function(response){
+        if(!response.ok) return response.json().then(function(data){throw new Error(data.error||'助手暂时无法回答');});
+        if(!response.body || !response.body.getReader) throw new Error('当前浏览器不支持流式输出');
+        return readStream(response.body.getReader());
+      })
+      .catch(function(error){ assistantError.textContent=error.message||'请求失败，请稍后重试'; assistantError.hidden=false; addMessage('assistant','这次请求没有完成，请稍后重试。'); })
+      .finally(function(){
+        if(typing && typing.parentNode) typing.remove();
+        assistantBusy=false; assistantSend.disabled=false; assistantInput.disabled=false; assistantInput.focus();
+      });
+  }
+  function renderMemories(items){
+    memoryList.innerHTML='';
+    if(!Array.isArray(items) || !items.length){ memoryList.innerHTML='<div class="memory-empty">还没有保存的记忆。</div>'; return; }
+    items.forEach(function(item){
+      var row=document.createElement('div'); row.className='memory-item';
+      var main=document.createElement('div'); main.className='memory-item-main';
+      main.innerHTML='<div class="memory-item-title">'+esc(item.title||'未命名')+'</div>'
+        +'<div class="memory-item-content">'+esc(item.content||'')+'</div>'
+        +'<div class="memory-item-meta">'+esc(item.memory_type||'记忆')+' · '+esc(item.created_at||'')+'</div>';
+      var del=document.createElement('button'); del.type='button'; del.className='memory-delete'; del.title='删除记忆'; del.setAttribute('aria-label','删除 '+(item.title||'这条记忆'));
+      del.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7l1-3h4l1 3"/></svg>';
+      del.onclick=function(){
+        if(!confirm('确认删除这条记忆？删除后无法恢复。')) return;
+        del.disabled=true;
+        fetch('/api/memory/'+encodeURIComponent(item.id),{method:'DELETE'}).then(function(response){if(!response.ok) throw new Error('删除失败'); return loadMemories();})
+          .catch(function(error){del.disabled=false; memoryStatus.textContent=error.message;});
+      };
+      row.appendChild(main); row.appendChild(del); memoryList.appendChild(row);
+    });
+  }
+  function loadMemories(){
+    memoryStatus.textContent='读取中…';
+    return fetch('/api/memory').then(function(response){return response.json().then(function(data){return {ok:response.ok && data.ok,data:data};});})
+      .then(function(result){if(!result.ok) throw new Error(result.data.error||'读取失败'); renderMemories(result.data.items); memoryStatus.textContent=''; return result.data.items;})
+      .catch(function(error){memoryList.innerHTML='<div class="memory-empty">暂时无法读取记忆。</div>'; memoryStatus.textContent=error.message;});
+  }
+  var chartState={symbol:'',name:'',quote:null,mode:'intraday',range:'1D',candles:[],viewStart:0,viewEnd:0,requestId:0,indicators:{ma:true,boll:false,macd:false,volume:true,rsi:false,volumeRatio:false,kdj:false},selectedItem:null};
+  function numberText(value, digits){return value==null||Number.isNaN(Number(value))?'—':Number(value).toFixed(digits==null?2:digits);}
+  function compactNumber(value){var n=Number(value);if(!Number.isFinite(n)) return '—';if(Math.abs(n)>=100000000)return (n/100000000).toFixed(2)+'亿';if(Math.abs(n)>=10000)return (n/10000).toFixed(1)+'万';return n.toFixed(0);}
+  function updateQuoteSummary(quote){
+    quote=quote||{}; var change=Number(quote.change||0), pct=Number(quote.change_pct||0);
+    document.getElementById('chartPrice').textContent=numberText(quote.price,2);
+    document.getElementById('chartChange').textContent=quote.price==null?'等待行情':((change>=0?'+':'')+numberText(change,2)+' '+(pct>=0?'+':'')+numberText(pct,2)+'%');
+    document.getElementById('chartQuote').className='chart-quote '+(change>=0?'up':'down');
+    [['quoteOpen',quote.open],['quoteHigh',quote.high],['quoteLow',quote.low],['quotePrev',quote.previous_close]].forEach(function(pair){document.getElementById(pair[0]).textContent=numberText(pair[1],2);});
+    document.getElementById('quoteVolume').textContent=compactNumber(quote.volume);
+    document.getElementById('quoteAmount').textContent=compactNumber(quote.amount);
+    document.getElementById('quoteSource').textContent=quote.source?('来源：'+quote.source+' · '+(quote.date||'')+' '+(quote.time||'')):'等待选择行情标的';
+  }
+  function updateIndicatorSummary(){
+    var latest=(chartState.candles||[])[(chartState.candles||[]).length-1]||{};
+    document.getElementById('quoteRsi').textContent=numberText(latest.rsi14,2);
+    document.getElementById('quoteVolumeRatio').textContent=latest.volume_ratio==null?'—':numberText(latest.volume_ratio,2)+'x';
+    document.getElementById('quoteMa20').textContent=numberText(latest.sma20,2);
+    document.getElementById('quoteMacd').textContent=numberText(latest.macd,4);
+  }
+  function selectWatchItem(item){
+    chartState.selectedItem=item; chartState.symbol=item.symbol||''; chartState.name=item.name||item.symbol||'';
+    document.getElementById('chartName').textContent=chartState.name; document.getElementById('chartSymbol').textContent=chartState.symbol;
+    updateQuoteSummary(item.quote||{});
+    document.querySelectorAll('.watch-row').forEach(function(node){node.classList.toggle('active',node.dataset.symbol===chartState.symbol);});
+    loadInteractiveChart();
+  }
+  function renderWatchlist(items){
+    var list=document.getElementById('watchList'); list.innerHTML='';
+    var count=document.getElementById('watchCount'); if(count) count.textContent=(Array.isArray(items)?items.length:0)+' 只';
+    if(!Array.isArray(items) || !items.length){list.innerHTML='<div class="research-empty">还没有自选行情。</div>'; chartState.selectedItem=null; document.getElementById('chartEmpty').textContent='添加或选择自选股后加载图表'; return;}
+    var nextItem=items.find(function(item){return item.symbol===chartState.symbol;})||items[0];
+    items.forEach(function(item){
+      var quote=item.quote||{}; var change=Number(quote.change||0); var pct=Number(quote.change_pct||0);
+      var row=document.createElement('div'); row.className='watch-row'+(item.symbol===chartState.symbol?' active':''); row.dataset.symbol=item.symbol||''; row.tabIndex=0;
+      var top=document.createElement('div'); top.className='research-item-top';
+      var name=document.createElement('span'); name.className='research-item-name'; name.textContent=(item.name||item.symbol)+' · '+item.symbol;
+      var price=document.createElement('span'); price.className='research-item-price'; price.textContent=quote.price==null?'—':String(quote.price);
+      var delta=document.createElement('span'); delta.className='research-item-change '+(change>=0?'up':'down'); delta.textContent=quote.price==null?'':((change>=0?'+':'')+change+' ('+(pct>=0?'+':'')+pct+'%)');
+      top.appendChild(name); top.appendChild(price); row.appendChild(top); row.appendChild(delta);
+      var actions=document.createElement('div'); actions.className='research-item-actions';
+      var fundamentalsBtn=document.createElement('button'); fundamentalsBtn.type='button'; fundamentalsBtn.className='research-action'; fundamentalsBtn.textContent='财务';
+      var canChart=/^(sh|sz)\d{6}$/i.test(item.symbol||''); fundamentalsBtn.disabled=!canChart;
+      fundamentalsBtn.onclick=function(event){event.stopPropagation(); fundamentalsBtn.disabled=true; fundamentalsBtn.textContent='读取中…';
+        fetch('/api/market/fundamentals?symbol='+encodeURIComponent(item.symbol)).then(function(r){return r.json().then(function(d){if(!r.ok||!d.ok) throw new Error(d.error||'财务数据不可用');return d.fundamentals;});}).then(function(data){
+          var box=row.querySelector('.research-fundamentals'); if(!box){box=document.createElement('div');box.className='research-result research-fundamentals';row.appendChild(box);}
+          renderMarkdownInto(box,'**'+(data.name||item.symbol)+' 财务快照**\n\n报告期：'+(data.report_date||'未知')+'\n\nPE：'+(data.pe==null?'—':data.pe)+'　PB：'+(data.pb==null?'—':data.pb)+'　ROE：'+(data.roe==null?'—':data.roe+'%')+'\n\n营收同比：'+(data.revenue_growth==null?'—':data.revenue_growth+'%')+'　净利润同比：'+(data.profit_growth==null?'—':data.profit_growth+'%')+'\n\n经营现金流：'+(data.operating_cash_flow==null?'—':data.operating_cash_flow)+'\n\n来源：'+(data.source||'未知')+'；缺失字段不做推算。'); fundamentalsBtn.textContent='刷新财务';
+        }).catch(function(e){fundamentalsBtn.title=e.message;fundamentalsBtn.textContent='读取失败';}).finally(function(){fundamentalsBtn.disabled=false;});
+      };
+      var delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='research-action watch-remove'; delBtn.textContent='移除';
+      delBtn.onclick=function(event){event.stopPropagation();fetch('/api/watchlist/'+item.id,{method:'DELETE'}).then(loadWatchlist);};
+      actions.appendChild(fundamentalsBtn); actions.appendChild(delBtn); row.appendChild(actions); list.appendChild(row);
+      row.onclick=function(){selectWatchItem(item);}; row.onkeydown=function(event){if(event.key==='Enter'||event.key===' '){event.preventDefault();selectWatchItem(item);}};
+    });
+    if(!chartState.selectedItem || chartState.selectedItem.symbol!==nextItem.symbol) selectWatchItem(nextItem);
+  }
+  function chartRangeCount(mode, range){
+    if(mode==='intraday') return ({'1D':78,'5D':390,'1M':500,'6M':500,'1Y':500}[range]||78);
+    return ({'1D':30,'5D':60,'1M':30,'6M':180,'1Y':260}[range]||30);
+  }
+  function aggregateWeeks(candles){
+    var out=[]; for(var i=0;i<candles.length;i+=5){var group=candles.slice(i,i+5);if(!group.length) continue;out.push({day:group[group.length-1].day,open:group[0].open,high:Math.max.apply(Math,group.map(function(x){return x.high;})),low:Math.min.apply(Math,group.map(function(x){return x.low;})),close:group[group.length-1].close,volume:group.reduce(function(sum,x){return sum+(Number(x.volume)||0);},0)});}
+    out.forEach(function(item,index){var start=Math.max(0,index-19),values=out.slice(start,index+1).map(function(x){return x.close;}); item.sma20=values.length>=20?values.reduce(function(a,b){return a+b;},0)/values.length:null;}); return out;
+  }
+  function chartPath(data, key, xAt, yAt){var path=''; data.forEach(function(item,index){var value=Number(item[key]);if(!Number.isFinite(value)) return;path+=(path?' L':'M')+xAt(index).toFixed(2)+' '+yAt(value).toFixed(2);});return path;}
+  function svgNode(tag, attrs){var node=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.keys(attrs||{}).forEach(function(key){node.setAttribute(key,attrs[key]);});return node;}
+  function renderInteractiveChart(){
+    var svg=document.getElementById('marketChart'), empty=document.getElementById('chartEmpty'), data=chartState.candles||[]; svg.innerHTML='';
+    if(!data.length){empty.hidden=false;return;} empty.hidden=true;
+    var W=1000,H=520,left=64,right=16,top=18,bottom=58;
+    var volumeH=chartState.indicators.volume?72:0,macdH=chartState.indicators.macd?70:0,rsiH=chartState.indicators.rsi?70:0,volumeRatioH=chartState.indicators.volumeRatio?70:0,kdjH=chartState.indicators.kdj?70:0;
+    var priceBottom=H-bottom-volumeH-macdH-rsiH-volumeRatioH-kdjH,plotH=priceBottom-top;
+    var start=Math.max(0,chartState.viewStart), end=Math.min(data.length,chartState.viewEnd||data.length), visible=data.slice(start,end); if(visible.length<2){start=0;end=data.length;visible=data;}
+    chartState.viewStart=start;chartState.viewEnd=end;
+    var highs=visible.map(function(x){return Number(x.high)||Number(x.close);}), lows=visible.map(function(x){return Number(x.low)||Number(x.close);});
+    var min=Math.min.apply(Math,lows),max=Math.max.apply(Math,highs),pad=(max-min||1)*.08;min-=pad;max+=pad;
+    var xAt=function(index){return left+(index/(Math.max(1,visible.length-1)))*(W-left-right);}, yAt=function(value){return priceBottom-(value-min)/(max-min)*plotH;};
+    var bg=svgNode('rect',{x:0,y:0,width:W,height:H,fill:'#101b29'});svg.appendChild(bg);
+    for(var g=0;g<=5;g++){var gy=top+plotH*g/5;svg.appendChild(svgNode('line',{x1:left,y1:gy,x2:W-right,y2:gy,stroke:'#26384b','stroke-width':1}));var label=svgNode('text',{x:left-8,y:gy+4,'text-anchor':'end',fill:'#91a4b8','font-size':11,'font-family':'JetBrains Mono'});label.textContent=numberText(max-(max-min)*g/5,2);svg.appendChild(label);}
+    for(var gx=0;gx<6;gx++){var index=Math.round((visible.length-1)*gx/5),x=xAt(index);svg.appendChild(svgNode('line',{x1:x,y1:top,x2:x,y2:H-bottom,stroke:'#1d2d3e','stroke-width':1}));var xl=svgNode('text',{x:x,y:H-34,'text-anchor':'middle',fill:'#7f93a8','font-size':10,'font-family':'JetBrains Mono'});xl.textContent=String(visible[index].day||'').slice(5,16);svg.appendChild(xl);}
+    var pricePath=chartPath(visible,'close',function(i){return xAt(i);},yAt);svg.appendChild(svgNode('path',{d:pricePath,fill:'none',stroke:'#f59e0b','stroke-width':2.4,'stroke-linejoin':'round','stroke-linecap':'round'}));
+    if(chartState.indicators.ma){var maPath=chartPath(visible,'sma20',function(i){return xAt(i);},yAt);if(maPath) svg.appendChild(svgNode('path',{d:maPath,fill:'none',stroke:'#38bdf8','stroke-width':1.4,'stroke-linejoin':'round'}));}
+    if(chartState.indicators.boll){['boll_upper','boll_lower'].forEach(function(key){var p=chartPath(visible,key,function(i){return xAt(i);},yAt);if(p) svg.appendChild(svgNode('path',{d:p,fill:'none',stroke:'#a78bfa','stroke-width':1,'stroke-dasharray':'4 4'}));});}
+    var panelTop=priceBottom;
+    if(chartState.indicators.volume){var maxVol=Math.max.apply(Math,visible.map(function(x){return Number(x.volume)||0;}))||1;visible.forEach(function(item,index){var vol=Number(item.volume)||0,vh=vol/maxVol*volumeH*.86,x=xAt(index),barW=Math.max(1,(W-left-right)/visible.length*.58);svg.appendChild(svgNode('rect',{x:x-barW/2,y:panelTop+volumeH-vh,width:barW,height:vh,fill:(Number(item.close)>=Number(item.open)?'#3f806d':'#9d5660'),opacity:.72}));});var volumeLabel=svgNode('text',{x:left,y:panelTop+volumeH+17,fill:'#71869b','font-size':10,'font-family':'JetBrains Mono'});volumeLabel.textContent='成交量';svg.appendChild(volumeLabel);panelTop+=volumeH;}
+    function drawLinePanel(height, keys, colors, label, minValue, maxValue){var panelBottom=panelTop+height-6, panelTopLocal=panelTop+6, values=[];visible.forEach(function(item){keys.forEach(function(key){var value=Number(item[key]);if(Number.isFinite(value)) values.push(value);});});if(!values.length){panelTop+=height;return;}var lo=minValue==null?Math.min.apply(Math,values):minValue,hi=maxValue==null?Math.max.apply(Math,values):maxValue;if(hi===lo){hi+=1;lo-=1;}var py=function(value){return panelBottom-(value-lo)/(hi-lo)*(panelBottom-panelTopLocal);};svg.appendChild(svgNode('line',{x1:left,y1:py(0),x2:W-right,y2:py(0),stroke:'#43566a','stroke-width':1}));keys.forEach(function(key,index){var path=chartPath(visible,key,function(i){return xAt(i);},py);if(path) svg.appendChild(svgNode('path',{d:path,fill:'none',stroke:colors[index]||'#38bdf8','stroke-width':1.3}));});var labelNode=svgNode('text',{x:left,y:panelTop+15,fill:'#71869b','font-size':10,'font-family':'JetBrains Mono'});labelNode.textContent=label;svg.appendChild(labelNode);panelTop+=height;}
+    if(chartState.indicators.macd) drawLinePanel(macdH,['macd'],['#fb7185'],'MACD');
+    if(chartState.indicators.rsi) drawLinePanel(rsiH,['rsi14'],['#fbbf24'],'RSI14',0,100);
+    if(chartState.indicators.volumeRatio) drawLinePanel(volumeRatioH,['volume_ratio'],['#34d399'],'量比',0,null);
+    if(chartState.indicators.kdj) drawLinePanel(kdjH,['k','d','j'],['#38bdf8','#f59e0b','#fb7185'],'KDJ',0,100);
+    document.getElementById('chartLegend').innerHTML='<span><i style="background:#f59e0b"></i>价格</span>'+(chartState.indicators.ma?'<span><i style="background:#38bdf8"></i>MA20</span>':'')+(chartState.indicators.boll?'<span><i style="background:#a78bfa"></i>布林带</span>':'')+(chartState.indicators.volume?'<span><i style="background:#64748b"></i>成交量</span>':'')+(chartState.indicators.macd?'<span><i style="background:#fb7185"></i>MACD</span>':'')+(chartState.indicators.rsi?'<span><i style="background:#fbbf24"></i>RSI14</span>':'')+(chartState.indicators.volumeRatio?'<span><i style="background:#34d399"></i>量比</span>':'')+(chartState.indicators.kdj?'<span><i style="background:#38bdf8"></i>KDJ</span>':'');
+    updateIndicatorSummary();
+  }
+  function loadInteractiveChart(){
+    var symbol=chartState.symbol;if(!symbol||!/^((sh|sz)\d{6})$/i.test(symbol)){document.getElementById('chartEmpty').textContent='该品种暂不支持历史图表';document.getElementById('chartEmpty').hidden=false;document.getElementById('marketChart').innerHTML='';return;}
+    var loading=document.getElementById('chartLoading');loading.hidden=false;var requestId=++chartState.requestId;var isIntraday=chartState.mode==='intraday';var scale=isIntraday?5:240;var days=isIntraday?500:500;
+    fetch('/api/market/history?symbol='+encodeURIComponent(symbol)+'&days='+days+'&scale='+scale,{cache:'no-store'}).then(function(r){return r.json().then(function(d){if(!r.ok||!d.ok) throw new Error(d.error||'行情加载失败');return d;});}).then(function(d){if(requestId!==chartState.requestId)return;var candles=d.candles||[];if(chartState.mode==='week') candles=aggregateWeeks(candles);chartState.candles=candles;var count=chartRangeCount(chartState.mode,chartState.range);chartState.viewEnd=candles.length;chartState.viewStart=Math.max(0,candles.length-count);document.getElementById('chartRangeLabel').textContent=(isIntraday?'5分钟线':'历史收盘')+' · 拖动查看 · 滚轮缩放';renderInteractiveChart();}).catch(function(e){if(requestId!==chartState.requestId)return;document.getElementById('chartEmpty').textContent=e.message;document.getElementById('chartEmpty').hidden=false;document.getElementById('marketChart').innerHTML='';}).finally(function(){if(requestId===chartState.requestId)loading.hidden=true;});
+  }
+  function initChartInteractions(){
+    var viewport=document.getElementById('chartViewport'); if(!viewport)return;var drag=null;
+    viewport.addEventListener('pointerdown',function(event){if(!chartState.candles.length)return;drag={id:event.pointerId,x:event.clientX,start:chartState.viewStart,end:chartState.viewEnd};viewport.setPointerCapture(event.pointerId);});
+    viewport.addEventListener('pointermove',function(event){if(drag){var width=viewport.clientWidth||1,delta=Math.round((drag.x-event.clientX)/width*(drag.end-drag.start));var span=drag.end-drag.start;chartState.viewStart=Math.max(0,Math.min(chartState.candles.length-span,drag.start+delta));chartState.viewEnd=chartState.viewStart+span;renderInteractiveChart();return;}if(!chartState.candles.length)return;var rect=viewport.getBoundingClientRect(),ratio=Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width)),index=chartState.viewStart+Math.round(ratio*(chartState.viewEnd-chartState.viewStart-1)),item=chartState.candles[index];if(!item)return;var tooltip=document.getElementById('chartTooltip');tooltip.innerHTML='<strong>'+esc(String(item.day||''))+'</strong>开 '+numberText(item.open,2)+'　高 '+numberText(item.high,2)+'<br>低 '+numberText(item.low,2)+'　收 '+numberText(item.close,2)+'<br>量 '+compactNumber(item.volume)+'　量比 '+numberText(item.volume_ratio,2)+'<br>RSI14 '+numberText(item.rsi14,2)+'　MACD '+numberText(item.macd,4);tooltip.style.display='block';tooltip.style.left=Math.min(Math.max(8,event.clientX-rect.left+12,8),rect.width-190)+'px';tooltip.style.top=Math.min(Math.max(8,event.clientY-rect.top-85,8),rect.height-100)+'px';});
+    viewport.addEventListener('pointerup',function(){drag=null;});viewport.addEventListener('pointercancel',function(){drag=null;});viewport.addEventListener('pointerleave',function(){if(!drag)document.getElementById('chartTooltip').style.display='none';});
+    viewport.addEventListener('wheel',function(event){if(!chartState.candles.length)return;event.preventDefault();var span=chartState.viewEnd-chartState.viewStart,ratio=(event.clientX-viewport.getBoundingClientRect().left)/(viewport.clientWidth||1),anchor=chartState.viewStart+span*ratio,nextSpan=Math.max(24,Math.min(chartState.candles.length,Math.round(span*(event.deltaY>0?1.18:.84))));chartState.viewStart=Math.max(0,Math.round(anchor-nextSpan*ratio));chartState.viewEnd=Math.min(chartState.candles.length,chartState.viewStart+nextSpan);chartState.viewStart=Math.max(0,chartState.viewEnd-nextSpan);renderInteractiveChart();},{passive:false});
+  }
+  function loadWatchlist(){
+    return fetch('/api/watchlist',{cache:'no-store'}).then(function(r){return r.json().then(function(d){if(!r.ok||!d.ok) throw new Error(d.error||'读取自选失败');return d;});})
+      .then(function(d){renderWatchlist(d.items);return d.items;})
+      .catch(function(e){document.getElementById('watchList').innerHTML='<div class="research-empty">'+esc(e.message)+'</div>';});
+  }
+  function compareWatchlist(){
+    var resultBox=document.getElementById('researchResult');
+    document.getElementById('researchResultPanel').hidden=false;
+    resultBox.textContent='比较中…';
+    fetch('/api/research/compare').then(function(r){return r.json().then(function(d){if(!r.ok||!d.ok) throw new Error(d.error||'同行比较失败');return d;});})
+      .then(function(d){renderMarkdownInto(resultBox,d.report||'暂无比较结果。');})
+      .catch(function(e){resultBox.textContent=e.message;});
+  }
+  function renderDataQuery(result){
+    var box=document.getElementById('dataQueryResult');
+    var trace=document.getElementById('dataQueryTrace');
+    var traceContent=document.getElementById('dataQueryTraceContent');
+    box.hidden=false;
+    renderMarkdownInto(box,result.answer||result.error||'查询没有返回可展示结果。');
+    var hits=(result.schema_hits||[]).map(function(hit){return (hit.table||'')+'.'+(hit.column||'')+' · '+(hit.description||'');});
+    var plan=result.plan||{};
+    traceContent.textContent=
+      '路由：'+(result.route||'text2sql')+'\n'
+      +'数据源：'+(result.data_source||'research_snapshot')+'\n'
+      +'规划：'+(plan.reason||'')+'\n\n'
+      +'SQL：\n'+(result.sql||'未生成')+'\n\n'
+      +'Schema 命中：\n'+(hits.join('\n')||'无');
+    trace.hidden=false;
+  }
+  function submitDataQuery(event){
+    event.preventDefault();
+    var input=document.getElementById('dataQueryInput');
+    var button=document.getElementById('dataQuerySubmit');
+    var status=document.getElementById('dataQueryStatus');
+    var message=input.value.trim();
+    if(!message){input.focus();return;}
+    button.disabled=true; status.className='research-status'; status.textContent='正在检索 Schema 并执行只读查询…';
+    fetch('/api/research/query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:message})})
+      .then(function(response){return response.json().then(function(data){return {ok:response.ok && data.ok,data:data};});})
+      .then(function(result){
+        renderDataQuery(result.data);
+        status.className='research-status'+(result.ok?'':' error');
+        status.textContent=result.ok?('查询完成：返回 '+(result.data.row_count||0)+' 条记录。'):(result.data.answer||result.data.error||'查询失败');
+      })
+      .catch(function(error){status.className='research-status error';status.textContent=error.message||'查询失败';})
+      .finally(function(){button.disabled=false;});
+  }
+  function setResearchStatus(message, isError){
+    var status=document.getElementById('researchStatus');
+    if(!status) return;
+    status.textContent=message||'';
+    status.className='research-status'+(isError?' error':'');
+  }
+  function renderAlerts(items){
+    var list=document.getElementById('alertList'); list.innerHTML='';
+    if(!Array.isArray(items) || !items.length){list.innerHTML='<div class="research-empty">暂无价格提醒。</div>'; return;}
+    items.forEach(function(alert){
+      var row=document.createElement('div'); row.className='research-item research-alert-item';
+      var top=document.createElement('div'); top.className='research-item-top';
+      var name=document.createElement('span'); name.className='research-item-name';
+      name.textContent=(alert.name||alert.symbol)+' · '+alert.symbol+' '+(alert.condition==='above'?'突破':'跌破')+' '+alert.threshold;
+      var state=document.createElement('span'); state.className='research-alert-state'+(alert.enabled?'':' triggered');
+      state.textContent=alert.enabled?'监控中':(alert.triggered_at?'已触发':'已停用');
+      top.appendChild(name); top.appendChild(state); row.appendChild(top);
+      if(alert.triggered_at){
+        var time=document.createElement('div'); time.className='research-empty'; time.textContent='触发时间：'+alert.triggered_at; row.appendChild(time);
+      }
+      var actions=document.createElement('div'); actions.className='research-item-actions';
+      var delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='research-action'; delBtn.textContent='删除';
+      delBtn.onclick=function(){delBtn.disabled=true;fetch('/api/alerts/'+alert.id,{method:'DELETE'}).then(function(r){if(!r.ok) throw new Error('删除提醒失败');return loadAlerts();}).catch(function(e){setResearchStatus(e.message,true);delBtn.disabled=false;});};
+      actions.appendChild(delBtn); row.appendChild(actions); list.appendChild(row);
+    });
+  }
+  function loadAlerts(){
+    return fetch('/api/alerts',{cache:'no-store'}).then(function(r){return r.json().then(function(d){if(!r.ok||!d.ok) throw new Error(d.error||'读取提醒失败');return d;});})
+      .then(function(d){renderAlerts(d.items);return d.items;})
+      .catch(function(e){document.getElementById('alertList').innerHTML='<div class="research-empty">'+esc(e.message)+'</div>';});
+  }
+  function notifyPriceAlert(item){
+    var q=item.quote||{}, a=item.alert||{};
+    var message=(a.name||a.symbol)+' 当前 '+(q.price==null?'—':q.price)+'，已'+(a.condition==='above'?'突破':'跌破')+' '+a.threshold;
+    showToast('价格提醒', message);
+    if(currentView==='workbench') setResearchStatus('已触发：'+message);
+    if(window.Notification && Notification.permission==='granted') new Notification('投资资讯价格提醒',{body:message});
+  }
+  function checkAlerts(){
+    return fetch('/api/alerts/check',{method:'POST'}).then(function(r){return r.json().then(function(d){if(!r.ok||!d.ok) throw new Error(d.error||'检查提醒失败');return d;});}).then(function(d){
+      var triggered=d.triggered||[];
+      triggered.forEach(notifyPriceAlert);
+      setAlertBadge(triggered.length);
+      // 提醒是全局能力：工作台没打开时只更新角标/toast，不去写隐藏 DOM。
+      return currentView==='workbench' ? loadAlerts() : triggered;
+    }).catch(function(e){
+      if(currentView==='workbench') setResearchStatus(e.message,true);
+    });
+  }
+  function openMemory(){
+    loadMemories();
+    if(memoryDialog.showModal) memoryDialog.showModal(); else memoryDialog.setAttribute('open','');
+  }
+  assistantToggle.onclick=toggleAssistant;
+  document.getElementById('assistantClose').onclick=closeAssistant;
+  document.getElementById('assistantScrim').onclick=closeAssistant;
+  document.getElementById('assistantFocusClear').onclick=function(){
+    setFocusContext(null);
+    assistantInput.placeholder='例如：最近 AI 算力链有什么变化？';
+  };
+  document.addEventListener('keydown',function(event){
+    if(event.key!=='Escape') return;
+    if(memoryDialog.open) return; // <dialog> 自己处理 Esc
+    if(appEl.classList.contains('assistant-open')){ event.preventDefault(); closeAssistant(); }
+  });
+  // 抽屉宽度拖拽（鼠标/触控 + 方向键微调 + 双击复位）
+  (function(){
+    var resizer=document.getElementById('assistantResizer');
+    var dragging=false;
+    function widthFromClientX(clientX){ return window.innerWidth - clientX; }
+    function onMove(event){
+      if(!dragging) return;
+      event.preventDefault();
+      applyAssistantWidth(widthFromClientX(event.touches ? event.touches[0].clientX : event.clientX));
+    }
+    function stop(){
+      if(!dragging) return;
+      dragging=false; document.body.style.userSelect='';
+      window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',stop);
+      window.removeEventListener('touchmove',onMove); window.removeEventListener('touchend',stop);
+    }
+    function start(event){
+      dragging=true; document.body.style.userSelect='none';
+      window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',stop);
+      window.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',stop);
+      event.preventDefault();
+    }
+    resizer.addEventListener('mousedown',start);
+    resizer.addEventListener('touchstart',start,{passive:false});
+    resizer.ondblclick=function(){applyAssistantWidth(ASSISTANT_DEFAULT_W);};
+    resizer.onkeydown=function(event){
+      var step = event.shiftKey ? 40 : 12;
+      if(event.key==='ArrowLeft'){ event.preventDefault(); applyAssistantWidth(assistant.offsetWidth+step); }
+      else if(event.key==='ArrowRight'){ event.preventDefault(); applyAssistantWidth(assistant.offsetWidth-step); }
+      else if(event.key==='Home'){ event.preventDefault(); applyAssistantWidth(ASSISTANT_DEFAULT_W); }
+    };
+  })();
+  document.getElementById('viewNews').onclick=function(){setView('news');};
+  document.getElementById('viewWorkbench').onclick=function(){setView('workbench');};
+  ['viewNews','viewWorkbench'].forEach(function(id){
+    document.getElementById(id).onkeydown=function(event){
+      if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}
+    };
+  });
+  document.getElementById('memoryBtn').onclick=openMemory;
+  document.getElementById('researchRefresh').onclick=function(){loadWatchlist();loadAlerts();checkAlerts();};
+  document.getElementById('researchCompare').onclick=compareWatchlist;
+  document.getElementById('researchResultClose').onclick=function(){
+    document.getElementById('researchResultPanel').hidden=true;
+  };
+  document.getElementById('dataQueryForm').onsubmit=submitDataQuery;
+  document.querySelectorAll('[data-data-query]').forEach(function(button){button.onclick=function(){
+    document.getElementById('dataQueryInput').value=button.dataset.dataQuery;
+    document.getElementById('dataQueryInput').focus();
+  };});
+  initChartInteractions();
+  document.querySelectorAll('[data-chart-mode]').forEach(function(button){button.onclick=function(){
+    chartState.mode=button.dataset.chartMode||'intraday';
+    document.querySelectorAll('[data-chart-mode]').forEach(function(node){var active=node===button;node.classList.toggle('active',active);node.setAttribute('aria-selected',active?'true':'false');});
+    loadInteractiveChart();
+  };});
+  document.querySelectorAll('[data-chart-range]').forEach(function(button){button.onclick=function(){
+    chartState.range=button.dataset.chartRange||'1D';
+    document.querySelectorAll('[data-chart-range]').forEach(function(node){node.classList.toggle('active',node===button);});
+    if(chartState.candles.length){var count=chartRangeCount(chartState.mode,chartState.range);chartState.viewEnd=chartState.candles.length;chartState.viewStart=Math.max(0,chartState.viewEnd-count);renderInteractiveChart();}
+  };});
+  document.querySelectorAll('[data-indicator]').forEach(function(button){button.onclick=function(){var key=button.dataset.indicator;chartState.indicators[key]=!chartState.indicators[key];button.classList.toggle('active',chartState.indicators[key]);renderInteractiveChart();};});
+  document.getElementById('memoryClose').onclick=function(){if(memoryDialog.close) memoryDialog.close(); else memoryDialog.removeAttribute('open');};
+  document.getElementById('assistantForm').onsubmit=function(event){event.preventDefault();sendAssistantMessage();};
+  assistantInput.onkeydown=function(event){if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAssistantMessage();}};
+  document.getElementById('memoryForm').onsubmit=function(event){
+    event.preventDefault();
+    var submit=event.target.querySelector('.memory-submit'); submit.disabled=true; memoryStatus.textContent='保存中…';
+    fetch('/api/memory/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      memory_type:document.getElementById('memoryType').value,title:document.getElementById('memoryTitle').value.trim(),content:document.getElementById('memoryContent').value.trim(),tags:[]
+    })}).then(function(response){return response.json().then(function(data){return {ok:response.ok && data.ok,data:data};});})
+      .then(function(result){if(!result.ok) throw new Error(result.data.error||'保存失败'); event.target.reset(); memoryStatus.textContent='已保存'; return loadMemories();})
+      .catch(function(error){memoryStatus.textContent=error.message;})
+      .finally(function(){submit.disabled=false;});
+  };
+  document.getElementById('watchForm').onsubmit=function(event){
+    event.preventDefault();
+    var symbol=document.getElementById('watchSymbol').value.trim();
+    fetch('/api/watchlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:symbol})})
+      .then(function(r){return r.json().then(function(d){if(!r.ok||!d.ok) throw new Error(d.error||'加入失败');return d;});})
+      .then(function(){event.target.reset();return loadWatchlist();})
+      .catch(function(e){document.getElementById('watchSymbol').title=e.message;});
+  };
+  document.getElementById('alertForm').onsubmit=function(event){
+    event.preventDefault();
+    if(window.Notification && Notification.permission==='default') Notification.requestPermission().catch(function(){});
+    fetch('/api/alerts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      symbol:document.getElementById('alertSymbol').value.trim(), condition:document.getElementById('alertCondition').value,
+      threshold:document.getElementById('alertThreshold').value
+    })}).then(function(r){return r.json().then(function(d){if(!r.ok||!d.ok) throw new Error(d.error||'设置提醒失败');return d;});})
+      .then(function(){event.target.reset();setResearchStatus('提醒已保存，正在检查当前行情…');return loadAlerts();})
+      .then(checkAlerts).catch(function(e){setResearchStatus(e.message,true);document.getElementById('alertThreshold').title=e.message;});
+  };
+  checkAlerts();
+  window.setInterval(checkAlerts,30000);
+
+  if(active) setActive(active);
+  else document.getElementById('board').innerHTML='<div class="empty">暂无可显示的数据。</div>';
+  setView('news');
+  try{ if(localStorage.getItem('assistantOpen')==='1') openAssistant(); }catch(e){}
+
+  var rb = document.getElementById('refreshBtn');
+  function setRefreshState(state, message){
+    var running = state === "submitting" || state === "running";
+    var failed = state === "failed";
+    rb.disabled = running;
+    rb.classList.toggle('spin', running);
+    rb.setAttribute('aria-busy', running ? 'true' : 'false');
+    var status = document.getElementById('refreshStatus');
+    status.className = failed ? 'error' : '';
+    status.textContent = message || '';
+    status.hidden = !message;
+  }
+  function refreshPayload(response){
+    return response.json().catch(function(){return {};}).then(function(payload){
+      return {ok:response.ok && payload && payload.ok,payload:payload||{},response:response};
+    });
+  }
+  function waitForRefresh(requestId){
+    return fetch('/api/refresh/status/'+encodeURIComponent(requestId),{cache:'no-store'})
+      .then(refreshPayload)
+      .then(function(result){
+        var payload=result.payload;
+        if(payload.status==='running'){
+          setRefreshState('running', payload.stage==='digest' ? '正在生成 AI 要点…' : '正在抓取资讯…');
+          return new Promise(function(resolve){setTimeout(resolve,1200);}).then(function(){return waitForRefresh(requestId);});
+        }
+        if(!result.ok) throw payload;
+        return payload;
+      });
+  }
+  if(rb) rb.onclick = function(){
+    if(rb.disabled || rb.classList.contains('spin')) return;
+    setRefreshState("submitting", "正在提交刷新请求…");
+    var requestId = window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : String(Date.now())+'-'+String(Math.random()).slice(2);
+    fetch("/api/refresh", {method: "POST",headers:{'X-Refresh-Request':requestId}})
+      .then(refreshPayload)
+      .then(function(result){
+        if(!result.ok) throw result.payload;
+        if(result.payload.status==='running'){
+          setRefreshState('running', '正在抓取资讯…');
+          return waitForRefresh(requestId);
+        }
+        return result.payload;
+      })
+      .then(function(payload){
+        setRefreshState("succeeded", "刷新成功，正在加载新数据…");
+        window.location.reload();
+      })
+      .catch(function(error){
+        setRefreshState("failed", "刷新失败");
+        var stage=error&&error.stage?error.stage:'请求';
+        var message=error&&error.error?error.error:'无法连接本地服务，请确认后台服务仍在运行';
+        alert('刷新失败（'+stage+'）：'+message);
+      });
+  };
+}
+var _s=document.createElement('script'); _s.src='data.js?t='+Date.now(); _s.onload=boot;
+_s.onerror=function(){document.getElementById('board').innerHTML='<div class="empty">数据加载失败</div>';};
+document.head.appendChild(_s);
+</script>
+</body>
+</html>
