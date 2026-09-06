@@ -1,12 +1,14 @@
 import "./InvestmentNewsFrame.css";
 
 export default function InvestmentNewsFrame() {
+  const newsPort = new URLSearchParams(window.location.search).get("newsPort") || "8888";
+
   return (
     <main className="investment-news-frame" aria-label="资讯看板">
       <iframe
         className="investment-news-frame__content"
         title="投资资讯"
-        src="http://127.0.0.1:8888/index.html"
+        src={`http://127.0.0.1:${newsPort}/index.html`}
       />
     </main>
   );

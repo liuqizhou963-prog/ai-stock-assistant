@@ -1,0 +1,35 @@
+{
+  "name": "desktop-agent-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "桌面 Agent Electron shell",
+  "author": "liuqizhou963-prog",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "prepare-release": "node scripts/prepare-release.cjs",
+    "dist": "npm run prepare-release && electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.desktopagent.stock",
+    "productName": "股票研究助手",
+    "directories": { "output": "release/windows" },
+    "npmRebuild": false,
+    "files": ["src/**/*", "package.json"],
+    "extraResources": [
+      { "from": "../renderer/dist", "to": "renderer" },
+      { "from": "../backend/app", "to": "backend/app" },
+      { "from": "../backend/.venv", "to": "backend/.venv" },
+      { "from": "../news-service", "to": "news-service", "filter": ["**/*", "!.venv{,/**/*}", "!state{,/**/*}", "!__pycache__{,/**/*}", "!.pytest_cache{,/**/*}", "!*.log"] },
+      { "from": "../news-service/.venv", "to": "news-service/.venv" },
+      { "from": "../pi-runtime", "to": "apps/pi-runtime", "filter": ["**/*", "!test{,/**/*}", "!node_modules/.cache{,/**/*}"] },
+      { "from": "../../vendor/pi/node_modules/yaml", "to": "apps/pi-runtime/node_modules/yaml" },
+      { "from": "../../config", "to": "config" }
+    ],
+    "win": { "target": "nsis" }
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^26.15.3"
+  }
+}

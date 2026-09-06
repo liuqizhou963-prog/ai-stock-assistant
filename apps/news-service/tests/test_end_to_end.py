@@ -6,56 +6,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class DashboardLayoutContractTests(unittest.TestCase):
-    """The assistant is a collapsible drawer; market tools live in the main area."""
+    """The news view keeps its own dashboard and routes users to the stock assistant."""
 
     def setUp(self):
         self.html = (ROOT / "index.html").read_text(encoding="utf-8")
 
-    def test_assistant_is_collapsed_until_opened(self):
-        self.assertIn('.assistant{position:relative', self.html)
-        self.assertIn('.app.assistant-open .assistant{display:flex;}', self.html)
+    def test_stock_assistant_is_a_current_tab_entry(self):
         self.assertIn('id="assistantToggle"', self.html)
-        self.assertIn('aria-expanded="false"', self.html)
+        self.assertIn('id="viewStockAssistant"', self.html)
+        self.assertIn('window.top.location.href', self.html)
+        self.assertIn("document.getElementById('assistantToggle').onclick = openStockAssistant", self.html)
+        self.assertNotIn('id="assistant"', self.html)
+        self.assertNotIn('id="viewWorkbench"', self.html)
 
-    def test_assistant_width_is_resizable_and_persisted(self):
-        self.assertIn('id="assistantResizer"', self.html)
-        self.assertIn("localStorage.setItem('assistantWidth'", self.html)
-        self.assertIn('--assistant-w', self.html)
-
-    def test_market_tools_live_in_the_main_workbench_view(self):
-        workbench = self.html.index('id="workbench"')
-        assistant = self.html.index('<aside class="assistant"')
-        self.assertLess(workbench, assistant, "行情工作台应在主区，不在助手内部")
-        self.assertIn('id="viewWorkbench"', self.html)
-        self.assertNotIn('id="researchBtn"', self.html)
-
-    def test_text2sql_panel_stays_inside_existing_workbench(self):
-        workbench = self.html.index('id="workbench"')
-        data_query = self.html.index('id="dataQueryPanel"')
-        assistant = self.html.index('<aside class="assistant"')
-        self.assertLess(workbench, data_query)
-        self.assertLess(data_query, assistant)
-        self.assertIn("/api/research/query", self.html)
-        self.assertIn('data-data-query="资讯总量是多少"', self.html)
-        self.assertIn('data-data-query="统计最近7天每天的资讯数量"', self.html)
-
-    def test_workbench_exposes_common_market_indicators(self):
-        self.assertIn('data-indicator="volume"', self.html)
-        self.assertIn('data-indicator="rsi"', self.html)
-        self.assertIn('data-indicator="volumeRatio"', self.html)
-        self.assertIn('data-indicator="kdj"', self.html)
-        self.assertIn('id="quoteVolumeRatio"', self.html)
-
-    def test_alerts_notify_globally_instead_of_the_chat_stream(self):
-        self.assertIn("showToast('价格提醒'", self.html)
+    def test_news_dashboard_keeps_its_refresh_and_global_notice_ui(self):
         self.assertIn('id="toastStack"', self.html)
-        self.assertIn('id="alertBadge"', self.html)
-
-    def test_board_items_can_be_handed_to_the_assistant(self):
-        self.assertIn('data-ask="item"', self.html)
-        self.assertIn('data-ask="point"', self.html)
-        self.assertIn('id="assistantFocus"', self.html)
-        self.assertIn('focus:sentFocus', self.html)
+        self.assertIn("showToast('价格提醒'", self.html)
+        self.assertIn('id="refreshBtn"', self.html)
+        self.assertIn('id="refreshStatus"', self.html)
 
 
 class EndToEndContractTests(unittest.TestCase):

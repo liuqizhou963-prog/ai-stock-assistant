@@ -1,0 +1,12 @@
+{
+  "name": "stock-assistant-pi-runtime",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@earendil-works/pi-agent-core": "file:../../vendor/pi/packages/agent",
+    "@earendil-works/pi-ai": "file:../../vendor/pi/packages/ai"
+  }
+}

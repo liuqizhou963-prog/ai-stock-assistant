@@ -269,8 +269,21 @@ def digest_data(data, config, call_model=None):
 
 def main():
     # main（程序入口）
-    config = llm.load_config(ROOT)
     data_path = os.path.join(ROOT, "data.js")
+    try:
+        config = llm.load_config(ROOT)
+    except llm.LLMError as error:
+        # 模型配置是可选的：没有配置时仍应保留抓取到的资讯，
+        # 只跳过 AI 要点和标题翻译，避免整次刷新失败。
+        if error.kind != "config" or str(error) != "缺少 llm.config.json":
+            raise
+        data = load_data_file(__import__("pathlib").Path(data_path))
+        result = dict(data)
+        result["has_ai"] = False
+        write_data_file(result, __import__("pathlib").Path(data_path))
+        print("未配置 llm.config.json，已保留抓取资讯并跳过 AI 摘要")
+        return
+
     data = load_data_file(__import__("pathlib").Path(data_path))
     result = digest_data(data, config)
 

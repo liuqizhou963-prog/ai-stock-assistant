@@ -17,7 +17,10 @@ class FetchTests(unittest.TestCase):
     def setUp(self):
         self.config = {
             "fetch": {
-                "per_source": 1
+                "per_source": 1,
+                # These tests cover source grouping and failure isolation, not
+                # the rolling freshness filter.
+                "recent_days": 365,
             },
             "industries": [
                 {
@@ -156,7 +159,7 @@ class FetchTests(unittest.TestCase):
         data = fetch.build_web_data(self.config, result)
 
         self.assertIn("generated_at", data)
-        self.assertEqual(data["recent_days"], 7)
+        self.assertEqual(data["recent_days"], self.config["fetch"]["recent_days"])
         self.assertFalse(data["has_ai"])
         self.assertEqual(data["stats"]["industries"], 1)
         self.assertEqual(data["stats"]["total_sources"], 1)

@@ -25,12 +25,8 @@ import {
   Bot,
   Brain,
   Check,
-  CheckCircle2,
   ChevronDown,
-  CircleAlert,
   ClipboardPenLine,
-  Clock3,
-  Database,
   Download,
   Eye,
   EyeOff,
@@ -55,7 +51,6 @@ import {
   Star,
   Trash2,
   WifiOff,
-  Wrench,
   X,
 } from "lucide-react";
 import "./App.css";
@@ -154,24 +149,6 @@ type ConversationMessage = {
   content: string;
   created_at: string;
   used_memories?: UsedMemory[];
-};
-
-type ToolCall = {
-  id: string;
-  conversation_id: string;
-  assistant_message_id: string | null;
-  tool_name: string;
-  status:
-    | "success"
-    | "timeout"
-    | "error"
-    | "invalid_arguments"
-    | "rejected"
-    | string;
-  source: string;
-  created_at: string;
-  arguments: Record<string, unknown> | null;
-  result: { error?: string; updatedAt?: string } | null;
 };
 
 type StreamEvent =
@@ -1248,34 +1225,6 @@ function renderAssistantContent(content: string): ReactNode {
     );
   }
   return <div className="assistant-content">{blocks}</div>;
-}
-
-function toolCallStatus(status: ToolCall["status"]) {
-  if (status === "success")
-    return {
-      label: "已完成",
-      Icon: CheckCircle2,
-      className: "tool-status-success",
-    };
-  if (status === "timeout")
-    return { label: "已超时", Icon: Clock3, className: "tool-status-timeout" };
-  if (status === "invalid_arguments")
-    return {
-      label: "参数无效",
-      Icon: CircleAlert,
-      className: "tool-status-error",
-    };
-  if (status === "rejected")
-    return {
-      label: "已拒绝",
-      Icon: CircleAlert,
-      className: "tool-status-error",
-    };
-  return {
-    label: "调用失败",
-    Icon: CircleAlert,
-    className: "tool-status-error",
-  };
 }
 
 function conversationTime(value: string) {
@@ -3692,16 +3641,12 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
   const [newMemoryValue, setNewMemoryValue] = useState("");
   const [agentError, setAgentError] = useState("");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
-  const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState("");
   const [sending, setSending] = useState(false);
   const [canvasRequest, setCanvasRequest] = useState<CanvasRequest>({
     section: "overview",
   });
-  const [expandedToolTraceId, setExpandedToolTraceId] = useState<string | null>(
-    null,
-  );
   const [canvasOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [listening, setListening] = useState(false);
@@ -3911,7 +3856,6 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
       setDataManagement(result);
       setConversations([]);
       setMessages([]);
-      setToolCalls([]);
       setMemories([]);
       setActiveConversationId(null);
       setDataManagementMessage("本地历史数据已清空。");
@@ -3965,31 +3909,19 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
       // Clear the previous conversation immediately when no conversation is selected.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages([]);
-      setToolCalls([]);
-      setExpandedToolTraceId(null);
       return;
     }
     let cancelled = false;
     const loadConversation = async () => {
       try {
-        const [messageResponse, toolCallResponse] = await Promise.all([
-          fetch(
-            `${API_BASE}/agent/conversations/${activeConversationId}/messages`,
-          ),
-          fetch(
-            `${API_BASE}/agent/conversations/${activeConversationId}/tool-calls`,
-          ),
-        ]);
-        if (!messageResponse.ok || !toolCallResponse.ok)
-          throw new Error("无法读取会话记录");
-        const [storedMessages, storedToolCalls] = await Promise.all([
-          messageResponse.json() as Promise<ConversationMessage[]>,
-          toolCallResponse.json() as Promise<ToolCall[]>,
-        ]);
+        const messageResponse = await fetch(
+          `${API_BASE}/agent/conversations/${activeConversationId}/messages`,
+        );
+        if (!messageResponse.ok) throw new Error("无法读取会话记录");
+        const storedMessages =
+          (await messageResponse.json()) as ConversationMessage[];
         if (!cancelled) {
           setMessages(storedMessages);
-          setToolCalls(storedToolCalls);
-          setExpandedToolTraceId(null);
         }
       } catch (requestError) {
         if (!cancelled)
@@ -4019,13 +3951,36 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
       setConversations((current) => [conversation, ...current]);
       setActiveConversationId(conversation.id);
       setMessages([]);
-      setToolCalls([]);
       return conversation;
     } catch (requestError) {
       setAgentError(
         requestError instanceof Error ? requestError.message : "无法新建会话",
       );
       return null;
+    }
+  };
+
+  const deleteConversation = async (conversation: Conversation) => {
+    if (!window.confirm(`确定删除会话“${conversation.title}”吗？`)) return;
+    try {
+      setAgentError("");
+      const response = await fetch(
+        `${API_BASE}/agent/conversations/${conversation.id}`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) throw new Error("无法删除会话");
+      const remaining = conversations.filter(
+        (item) => item.id !== conversation.id,
+      );
+      setConversations(remaining);
+      if (activeConversationId === conversation.id) {
+        setActiveConversationId(remaining[0]?.id ?? null);
+        setMessages([]);
+      }
+    } catch (requestError) {
+      setAgentError(
+        requestError instanceof Error ? requestError.message : "无法删除会话",
+      );
     }
   };
 
@@ -4149,11 +4104,6 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
         completedResult.userMessage,
         assistantMessageWithMemories,
       ]);
-      const toolCallResponse = await fetch(
-        `${API_BASE}/agent/conversations/${conversationId}/tool-calls`,
-      );
-      if (toolCallResponse.ok)
-        setToolCalls((await toolCallResponse.json()) as ToolCall[]);
       setConversations((current) => {
         const updatedConversation = current.find(
           (conversation) => conversation.id === conversationId,
@@ -4321,19 +4271,6 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
             placeholder="搜索会话"
           />
         </label>
-        <section className="pinned-conversation" aria-label="置顶研究">
-          <p>置顶</p>
-          <button
-            type="button"
-            onClick={() => setComposer("请总结本周市场风险与值得关注的行业信号")}
-          >
-            <Star size={14} />
-            <span>
-              <strong>本周市场观察</strong>
-              <small>研究摘要</small>
-            </span>
-          </button>
-        </section>
         <button
           className="conversation-section-heading"
           type="button"
@@ -4352,16 +4289,26 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
         {recentConversationsOpen && (
           <div className="conversation-list" id="recent-conversation-list">
             {visibleConversations.map((conversation) => (
-              <button
-                className={`conversation-item ${activeConversationId === conversation.id ? "conversation-item-active" : ""}`}
-                key={conversation.id}
-                type="button"
-                onClick={() => setActiveConversationId(conversation.id)}
-              >
-                <strong>{conversation.title}</strong>
-                <span>{conversation.preview}</span>
-                <time>{conversationTime(conversation.updated_at)}</time>
-              </button>
+              <div className="conversation-item-row" key={conversation.id}>
+                <button
+                  className={`conversation-item ${activeConversationId === conversation.id ? "conversation-item-active" : ""}`}
+                  type="button"
+                  onClick={() => setActiveConversationId(conversation.id)}
+                >
+                  <strong>{conversation.title}</strong>
+                  <span>{conversation.preview}</span>
+                  <time>{conversationTime(conversation.updated_at)}</time>
+                </button>
+                <button
+                  className="conversation-delete-button"
+                  type="button"
+                  title="删除会话"
+                  aria-label={`删除会话 ${conversation.title}`}
+                  onClick={() => void deleteConversation(conversation)}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             ))}
             {conversations.length > 0 && visibleConversations.length === 0 && (
               <p className="conversation-empty">没有匹配的会话</p>
@@ -4429,13 +4376,6 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
             <span>今天</span>
           </div>
           {messages.map((message) => {
-            const messageToolCalls =
-              message.role === "assistant"
-                ? toolCalls.filter(
-                    (toolCall) => toolCall.assistant_message_id === message.id,
-                  )
-                : [];
-            const traceExpanded = expandedToolTraceId === message.id;
             return (
               <article
                 className={`chat-message chat-message-${message.role}`}
@@ -4496,66 +4436,6 @@ function AgentWorkspace({ onOpenNews }: { onOpenNews: () => void }) {
                     </section>
                   )}
 
-                  {messageToolCalls.length > 0 && (
-                    <section
-                      className="tool-trace"
-                      aria-label="本次回答的工具调用过程"
-                    >
-                      <button
-                        className="tool-trace-heading"
-                        type="button"
-                        aria-expanded={traceExpanded}
-                        onClick={() =>
-                          setExpandedToolTraceId(
-                            traceExpanded ? null : message.id,
-                          )
-                        }
-                      >
-                        <Wrench size={15} />
-                        <strong>工具调用过程</strong>
-                        <span>
-                          {messageToolCalls.length} 项 ·{" "}
-                          {traceExpanded ? "收起明细" : "查看明细"}
-                        </span>
-                        <ChevronDown
-                          size={15}
-                          className={
-                            traceExpanded ? "tool-trace-chevron-open" : ""
-                          }
-                          aria-hidden="true"
-                        />
-                      </button>
-                      {traceExpanded &&
-                        messageToolCalls.map((toolCall) => {
-                          const status = toolCallStatus(toolCall.status);
-                          const timestamp =
-                            toolCall.result?.updatedAt || toolCall.created_at;
-                          return (
-                            <div className="tool-trace-row" key={toolCall.id}>
-                              <status.Icon
-                                className={status.className}
-                                size={16}
-                                aria-hidden="true"
-                              />
-                              <div className="tool-trace-details">
-                                <strong>{toolCall.tool_name}</strong>
-                                <span>
-                                  <Database size={13} />
-                                  {toolCall.source || "数据源待确认"} ·{" "}
-                                  {status.label}
-                                </span>
-                                {toolCall.result?.error && (
-                                  <small>{toolCall.result.error}</small>
-                                )}
-                              </div>
-                              <time dateTime={timestamp}>
-                                {formatDate(timestamp)}
-                              </time>
-                            </div>
-                          );
-                        })}
-                    </section>
-                  )}
                 </div>
               </article>
             );

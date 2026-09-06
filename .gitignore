@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.env
+*.log
+state/*.db
+.claude/
+.playwright-cli/
+apps/desktop/release/
+apps/desktop/release-*/
+output/
+skills/
+state/

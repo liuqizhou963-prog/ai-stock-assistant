@@ -205,6 +205,29 @@ class DigestTests(unittest.TestCase):
         self.assertEqual(context.exception.code, 2)
         mock_write.assert_not_called()
 
+    @patch("digest.llm.load_config")
+    @patch("digest.load_data_file")
+    @patch("digest.write_data_file")
+    def test_digest_main_keeps_fetched_data_when_llm_config_is_missing(
+        self,
+        mock_write,
+        mock_load_data,
+        mock_load_config,
+    ):
+        mock_load_config.side_effect = digest.llm.LLMError("config", "缺少 llm.config.json")
+        fetched = {
+            "industries": [{"items": [{"title": "新闻"}]}],
+            "has_ai": True,
+        }
+        mock_load_data.return_value = fetched
+
+        digest.main()
+
+        mock_write.assert_called_once()
+        saved = mock_write.call_args.args[0]
+        self.assertFalse(saved["has_ai"])
+        self.assertEqual(saved["industries"], fetched["industries"])
+
 
 if __name__ == "__main__":
     unittest.main()

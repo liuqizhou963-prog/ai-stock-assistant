@@ -1,0 +1,103 @@
+{
+  "version": 2,
+  "sources": [
+    {
+      "id": "cls-telegraph",
+      "name": "财联社快讯",
+      "category": "实时快讯",
+      "url": "https://www.cls.cn/v1/roll/get_roll_list",
+      "format": "cls",
+      "enabled": true
+    },
+    {
+      "id": "eastmoney-global",
+      "name": "东方财富全球资讯",
+      "category": "全球市场",
+      "url": "https://np-weblist.eastmoney.com/comm/web/getFastNewsList",
+      "format": "eastmoney",
+      "enabled": true
+    },
+    {
+      "id": "eastmoney-stock-news",
+      "name": "东方财富个股资讯",
+      "category": "个股资讯",
+      "url": "https://search-api-web.eastmoney.com/search/jsonp",
+      "format": "eastmoney-stock-news",
+      "enabled": true
+    },
+    {
+      "id": "eastmoney-industry-reports",
+      "name": "东方财富行业研报",
+      "category": "行业研报",
+      "url": "https://reportapi.eastmoney.com/report/list",
+      "format": "eastmoney-report",
+      "qType": "1",
+      "enabled": true
+    },
+    {
+      "id": "eastmoney-company-reports",
+      "name": "东方财富个股研报",
+      "category": "个股研报",
+      "url": "https://reportapi.eastmoney.com/report/list",
+      "format": "eastmoney-report",
+      "qType": "0",
+      "enabled": true
+    },
+    {
+      "id": "cninfo-announcements",
+      "name": "巨潮资讯公告",
+      "category": "公司公告",
+      "url": "https://www.cninfo.com.cn/new/hisAnnouncement/query",
+      "format": "cninfo",
+      "enabled": true
+    },
+    {
+      "id": "sse-disclosures",
+      "name": "上海证券交易所披露",
+      "category": "交易所公告",
+      "url": "https://query.sse.com.cn/security/stock/queryCompanyBulletin.do",
+      "format": "sse",
+      "enabled": true
+    },
+    {
+      "id": "szse-disclosures",
+      "name": "深圳证券交易所披露",
+      "category": "交易所公告",
+      "url": "https://www.szse.cn/api/disc/announcement/annList",
+      "format": "szse",
+      "enabled": true
+    },
+    {
+      "id": "pbc-policy",
+      "name": "中国人民银行政策",
+      "category": "宏观政策",
+      "url": "http://www.pbc.gov.cn/goutongjiaoliu/113456/113469/index.html",
+      "format": "pbc",
+      "enabled": true
+    },
+    {
+      "id": "stats-macro",
+      "name": "国家统计局宏观数据",
+      "category": "宏观数据",
+      "url": "https://www.stats.gov.cn/sj/zxfb/",
+      "format": "stats",
+      "enabled": true
+    },
+    {
+      "id": "sina-finance",
+      "name": "新浪财经资讯",
+      "category": "财经资讯",
+      "url": "https://finance.sina.com.cn/roll/c/56588.shtml",
+      "format": "sina",
+      "enabled": true
+    },
+    {
+      "id": "10jqka-finance",
+      "name": "同花顺财经资讯",
+      "category": "财经资讯",
+      "url": "https://news.10jqka.com.cn/",
+      "format": "10jqka",
+      "enabled": true
+    }
+  ]
+}
